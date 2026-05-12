@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_bar_app
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - db
+    networks:
+      - laravel
+
+  web:
+    image: nginx:alpine
+    container_name: laravel_bar_web
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - laravel
+
+  db:
+    image: mariadb:10.6
+    container_name: laravel_bar_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: laravel_bar
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - laravel
+
+networks:
+  laravel:
+    driver: bridge
+
+volumes:
+  dbdata:
