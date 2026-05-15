@@ -41,17 +41,15 @@ Route::middleware(['auth'])->group(function () {
         return view('dashboard');
     })->name('dashboard');
 
-    // Mesa routes (admin only)
-    Route::middleware(['role:admin'])->group(function () {
-        Route::resource('/mesas', MesaController::class)->except(['show']);
-    });
-
     // Admin routes (admin only)
-    Route::prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/test-admin-no-middleware', function () { return 'Test admin no middleware'; });
         Route::get('/test-admin', function () { return 'Test admin route'; });
         Route::get('/dashboard', [App\Http\Controllers\Admin\AdminController::class, 'dashboard'])->name('dashboard');
         Route::resource('/users', App\Http\Controllers\Admin\AdminController::class)->except(['show']);
+        Route::resource('/mesas', MesaController::class)->except(['show']);
+        Route::resource('/categorias', App\Http\Controllers\Admin\CategoriaController::class);
+        Route::resource('/productos', App\Http\Controllers\Admin\ProductoController::class);
         Route::get('/branding/edit', [App\Http\Controllers\Admin\BrandingController::class, 'edit'])->name('admin.branding.edit');
         Route::put('/branding', [App\Http\Controllers\Admin\BrandingController::class, 'update'])->name('admin.branding.update');
     });
