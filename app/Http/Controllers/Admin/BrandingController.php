@@ -54,7 +54,7 @@ class BrandingController extends Controller
 
         $branding->update($data);
 
-        return redirect()->route('admin.branding.edit')
+        return redirect()->route('branding.edit')
             ->with('success', 'Branding actualizado exitosamente.');
     }
 }

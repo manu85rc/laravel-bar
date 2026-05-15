@@ -50,8 +50,8 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('/mesas', MesaController::class)->except(['show']);
         Route::resource('/categorias', App\Http\Controllers\Admin\CategoriaController::class);
         Route::resource('/productos', App\Http\Controllers\Admin\ProductoController::class);
-        Route::get('/branding/edit', [App\Http\Controllers\Admin\BrandingController::class, 'edit'])->name('admin.branding.edit');
-        Route::put('/branding', [App\Http\Controllers\Admin\BrandingController::class, 'update'])->name('admin.branding.update');
+        Route::get('/branding/edit', [App\Http\Controllers\Admin\BrandingController::class, 'edit'])->name('branding.edit');
+        Route::put('/branding', [App\Http\Controllers\Admin\BrandingController::class, 'update'])->name('branding.update');
     });
 
     // Reserva routes (authenticated users)
