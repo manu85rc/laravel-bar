@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Branding extends Model
 {
+    protected $table = 'branding';
+
     protected $fillable = [
         'app_name',
         'logo_path',
