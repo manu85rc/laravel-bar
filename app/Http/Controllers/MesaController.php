@@ -36,7 +36,7 @@ class MesaController extends Controller
             'disponible' => 'boolean',
         ]);
 
-        Mesa::create($request->all());
+        Mesa::create($request->except('_token'));
 
         return redirect()->route('mesas.index')
                         ->with('success', 'Mesa creada exitosamente.');
@@ -62,7 +62,7 @@ class MesaController extends Controller
             'disponible' => 'boolean',
         ]);
 
-        $mesa->update($request->all());
+        $mesa->update($request->except('_token'));
 
         return redirect()->route('mesas.index')
                         ->with('success', 'Mesa actualizada exitosamente.');

@@ -10,11 +10,11 @@
             </a>
         </div>
 
-        @if (->any())
+        @if ($errors->any())
             <div class="mb-4 p-4 bg-red-100 border rounded">
                 <ul class="list-disc list-inside text-sm text-red-700">
-                    @foreach (->all() as )
-                        <li>{{  }}</li>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
                     @endforeach
                 </ul>
             </div>
@@ -30,15 +30,15 @@
                 <select name="mesa_id" id="mesa_id"
                         class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     <option value="">Selecciona una mesa</option>
-                    @foreach ( as )
-                        <option value="{{ ->id }}"
-                                {{ old('mesa_id') == ->id ? 'selected' : '' }}>
-                            Mesa {{ ->numero }} ({{ ->capacidad }} personas) - {{ ->ubicacion ?? 'Sin ubicación' }}
+                    @foreach ($mesas as $mesa)
+                        <option value="{{ $mesa->id }}"
+                                {{ old('mesa_id') == $mesa->id ? 'selected' : '' }}>
+                            Mesa {{ $mesa->numero }} ({{ $mesa->capacidad }} personas) - {{ $mesa->ubicacion ?? 'Sin ubicación' }}
                         </option>
                     @endforeach
                 </select>
-                @if (->has('mesa_id'))
-                    <span class="text-red-500 text-sm block mt-1">{{ ->first('mesa_id') }}</span>
+                @if ($errors->has('mesa_id'))
+                    <span class="text-red-500 text-sm block mt-1">{{ $errors->first('mesa_id') }}</span>
                 @endif
             </div>
 
@@ -46,14 +46,16 @@
                 <label for="fecha_hora" class="block text-gray-700 text-sm font-bold mb-2">
                     Fecha y Hora
                 </label>
-                <input type="datetime-local"
+                <input type="text"
                        name="fecha_hora"
                        id="fecha_hora"
                        required
+                       placeholder="dd-mm-aaaa HH:MM"
                        class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                       value="{{ old('fecha_hora') }}">
-                @if (->has('fecha_hora'))
-                    <span class="text-red-500 text-sm block mt-1">{{ ->first('fecha_hora') }}</span>
+                       value="{{ old('fecha_hora') }}"
+                       data-flatpickr>
+                @if ($errors->has('fecha_hora'))
+                    <span class="text-red-500 text-sm block mt-1">{{ $errors->first('fecha_hora') }}</span>
                 @endif
             </div>
 
@@ -68,8 +70,8 @@
                        min="1"
                        class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
                        value="{{ old('numero_personas') }}">
-                @if (->has('numero_personas'))
-                    <span class="text-red-500 text-sm block mt-1">{{ ->first('numero_personas') }}</span>
+                @if ($errors->has('numero_personas'))
+                    <span class="text-red-500 text-sm block mt-1">{{ $errors->first('numero_personas') }}</span>
                 @endif
             </div>
 
@@ -79,8 +81,8 @@
                 </label>
                 <textarea name="observaciones" id="observaciones" rows="3"
                         class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500">{{ old('observaciones') }}</textarea>
-                @if (->has('observaciones'))
-                    <span class="text-red-500 text-sm block mt-1">{{ ->first('observaciones') }}</span>
+                @if ($errors->has('observaciones'))
+                    <span class="text-red-500 text-sm block mt-1">{{ $errors->first('observaciones') }}</span>
                 @endif
             </div>
 

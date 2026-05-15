@@ -10,11 +10,11 @@
             </a>
         </div>
 
-        @if (->any())
+        @if ($errors->any())
             <div class="mb-4 p-4 bg-red-100 border rounded">
                 <ul class="list-disc list-inside text-sm text-red-700">
-                    @foreach (->all() as )
-                        <li>{{  }}</li>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
                     @endforeach
                 </ul>
             </div>
@@ -33,8 +33,8 @@
                        required
                        class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
                        value="{{ old('numero') }}">
-                @if (->has('numero'))
-                    <span class="text-red-500 text-sm block mt-1">{{ ->first('numero') }}</span>
+                @if ($errors->has('numero'))
+                    <span class="text-red-500 text-sm block mt-1">{{ $errors->first('numero') }}</span>
                 @endif
             </div>
 
@@ -49,8 +49,8 @@
                        min="1"
                        class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
                        value="{{ old('capacidad') }}">
-                @if (->has('capacidad'))
-                    <span class="text-red-500 text-sm block mt-1">{{ ->first('capacidad') }}</span>
+                @if ($errors->has('capacidad'))
+                    <span class="text-red-500 text-sm block mt-1">{{ $errors->first('capacidad') }}</span>
                 @endif
             </div>
 
@@ -63,24 +63,35 @@
                        id="ubicacion"
                        class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
                        value="{{ old('ubicacion') }}">
-                @if (->has('ubicacion'))
-                    <span class="text-red-500 text-sm block mt-1">{{ ->first('ubicacion') }}</span>
+                @if ($errors->has('ubicacion'))
+                    <span class="text-red-500 text-sm block mt-1">{{ $errors->first('ubicacion') }}</span>
                 @endif
             </div>
 
             <div class="mb-4">
                 <div class="flex items-center">
-                    <input type="checkbox"
-                           name="disponible"
-                           id="disponible"
-                           class="form-checkbox h-4 w-4 text-indigo-600"
-                           {{ old('disponible', true) ? 'checked' : '' }}>
-                    <label for="disponible" class="ml-2 block text-sm text-gray-700">
-                        Disponible
-                    </label>
+                    <button type="button"
+                            class="ml-2 flex items-center px-3 py-1 text-xs font-medium rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
+                            onclick="
+                                if (this.textContent === 'Sí') {
+                                    this.textContent = 'No';
+                                    this.classList.remove('bg-green-100', 'text-green-800');
+                                    this.classList.add('bg-red-100', 'text-red-800');
+                                    document.getElementById('disponible').value = 0;
+                                } else {
+                                    this.textContent = 'Sí';
+                                    this.classList.remove('bg-red-100', 'text-red-800');
+                                    this.classList.add('bg-green-100', 'text-green-800');
+                                    document.getElementById('disponible').value = 1;
+                                }
+                            "
+                            {{ old('disponible', true) ? 'class="bg-green-100 text-green-800"' : 'class="bg-red-100 text-red-800"' }}>
+                        {{ old('disponible', true) ? 'Sí' : 'No' }}
+                    </button>
+                    <input type="hidden" name="disponible" id="disponible" value="{{ old('disponible', true) ? 1 : 0 }}">
                 </div>
-                @if (->has('disponible'))
-                    <span class="text-red-500 text-sm block mt-1">{{ ->first('disponible') }}</span>
+                @if ($errors->has('disponible'))
+                    <span class="text-red-500 text-sm block mt-1">{{ $errors->first('disponible') }}</span>
                 @endif
             </div>
 

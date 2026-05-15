@@ -50,9 +50,11 @@ class ReservaController extends Controller
     {
         $request->validate([
             'mesa_id' => 'required|exists:mesas,id',
-            'fecha_hora' => 'required|date_format:Y-m-d H:i:s|after_or_equal:now',
+            'fecha_hora' => 'required|date_format:d-m-Y H:i|after_or_equal:now',
             'numero_personas' => 'required|integer|min:1',
             'observaciones' => 'nullable|string|max:255',
+        ], [
+            'mesa_id.required' => 'Debes seleccionar una mesa',
         ]);
 
         // Check if the selected mesa is still disponible (to avoid race condition)
@@ -120,10 +122,12 @@ class ReservaController extends Controller
 
         $request->validate([
             'mesa_id' => 'required|exists:mesas,id',
-            'fecha_hora' => 'required|date_format:Y-m-d H:i:s|after_or_equal:now',
+            'fecha_hora' => 'required|date_format:d-m-Y H:i|after_or_equal:now',
             'numero_personas' => 'required|integer|min:1',
             'observaciones' => 'nullable|string|max:255',
             'estado' => 'required|in:pendiente,confirmada,completada,cancelada',
+        ], [
+            'mesa_id.required' => 'Debes seleccionar una mesa',
         ]);
 
         // Check if the selected mesa is still disponible (or is the same as the current one)

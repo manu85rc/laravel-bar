@@ -18,23 +18,9 @@
         <div class="p-6">
             @auth
                 <div class="mb-4">
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-800">
-                            Cerrar sesión
-                        </button>
-                    </form>
                 </div>
             @endauth
             @if (session('success'))
-            <div class="mb-4">
-                <form method="POST" action="{{ route('logout') }}" class="inline">
-                    @csrf
-                    <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-800">
-                        Cerrar sesión
-                    </button>
-                </form>
-            </div>
                 <div class="mb-4 p-4 bg-green-100 border rounded">
                     {{ session('success') }}
                 </div>
