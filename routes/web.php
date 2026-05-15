@@ -52,6 +52,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/test-admin', function () { return 'Test admin route'; });
         Route::get('/dashboard', [App\Http\Controllers\Admin\AdminController::class, 'dashboard'])->name('dashboard');
         Route::resource('/users', App\Http\Controllers\Admin\AdminController::class)->except(['show']);
+        Route::get('/branding/edit', [App\Http\Controllers\Admin\BrandingController::class, 'edit'])->name('admin.branding.edit');
+        Route::put('/branding', [App\Http\Controllers\Admin\BrandingController::class, 'update'])->name('admin.branding.update');
     });
 
     // Reserva routes (authenticated users)
