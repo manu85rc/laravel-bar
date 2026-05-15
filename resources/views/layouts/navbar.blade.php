@@ -7,7 +7,7 @@
                 <div class="flex">
                     <div class="flex-shrink-0 flex items-center">
                         <a href="{{ url('/') }}" class="text-xl font-semibold text-indigo-600">
-                            🍸 {{ config('app.name', 'Laravel Bar') }}
+                            🍸 {{ isset($branding) ? $branding->app_name : (App\Models\Branding::getInstance()->app_name ?? 'Laravel Bar') }}
                         </a>
                     </div>
                     <div class="hidden md:block">

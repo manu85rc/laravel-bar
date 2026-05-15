@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name', 'Laravel Bar') }}</title>
+    <title>{{ isset($branding) ? $branding->app_name : (App\Models\Branding::getInstance()->app_name ?? 'Laravel Bar') }}</title>
     <!-- Tailwind CSS via CDN for simplicity -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Flatpickr for datetime picker -->
