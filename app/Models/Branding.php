@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 class Branding extends Model
 {
@@ -16,6 +17,10 @@ class Branding extends Model
 
     public static function getInstance()
     {
+        // Log the table name for debugging
+        $table = (new static)->getTable();
+        Log::info('Branding model using table: ' . $table);
+        
         return self::firstOrCreate([], [
             'app_name' => 'Mi Bar',
             'logo_path' => null,
