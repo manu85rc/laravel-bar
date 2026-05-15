@@ -136,11 +136,41 @@
                 </a>
                 
                 @if (auth()->user()->isAdmin())
-                    <a href="{{ url('/admin/users') }}"
-                       class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
-                       @click="setTimeout(() => { open = false; }, 50)">
-                        Admin
-                    </a>
+                    <div x-data="{ adminOpen: false }" class="relative w-full">
+                        <button @click="adminOpen = ! adminOpen" class="w-full flex items-center justify-between px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin*') || request()->is('/admin/branding*') || request()->is('/admin/mesas*') || request()->is('/admin/categorias*') || request()->is('/admin/productos*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}">
+                            Admin
+                            <svg class="h-4 w-4 ml-2" :class="{ 'transform -rotate-180': adminOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </button>
+                        <div x-show="adminOpen" x-transition x-origin="top" class="mt-2 space-y-1">
+                            <a href="{{ url('/admin/users') }}"
+                               class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin/users*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
+                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)">
+                                Users
+                            </a>
+                            <a href="{{ url('/admin/mesas') }}"
+                               class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin/mesas*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
+                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)">
+                                Mesas
+                            </a>
+                            <a href="{{ url('/admin/categorias') }}"
+                               class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin/categorias*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
+                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)">
+                                Categorías
+                            </a>
+                            <a href="{{ url('/admin/productos') }}"
+                               class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin/productos*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
+                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)">
+                                Productos
+                            </a>
+                            <a href="{{ url('/admin/branding/edit') }}"
+                               class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin/branding*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
+                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)">
+                                Branding
+                            </a>
+                        </div>
+                    </div>
                 @endif
             @else
                 <a href="{{ route('login') }}"
