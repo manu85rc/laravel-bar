@@ -48,6 +48,11 @@
                     </select>
                 </div>
 
+                <div>
+                    <label for="foto" class="block text-sm font-medium text-gray-700">Foto (opcional)</label>
+                    <input type="file" name="foto" id="foto" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
+                    <p class="mt-1 text-xs text-gray-500">Formatos aceptados: JPG, PNG, GIF, SVG (máx. 2MB)</p>
+                </div>
                 <div class="flex items-center">
                     <div class="flex items-center space-x-2">
                         <input type="checkbox" name="disponible" id="disponible" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" {{ old('disponible', true) ? 'checked' : '' }}>

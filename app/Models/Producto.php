@@ -17,10 +17,16 @@ class Producto extends Model
         'precio',
         'categoria_id',
         'disponible',
+        'foto_path',
     ];
 
     public function categoria()
     {
         return $this->belongsTo(Categoria::class);
+    }
+
+    public function fotoUrl()
+    {
+        return $this->foto_path ? asset('storage/' . $this->foto_path) : null;
     }
 }
