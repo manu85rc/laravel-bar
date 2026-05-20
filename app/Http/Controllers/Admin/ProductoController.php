@@ -13,10 +13,28 @@ class ProductoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $productos = Producto::with('categoria')->get();
-        return view('admin.productos.index', compact('productos'));
+        $query = Producto::with('categoria');
+
+        if ($search = $request->get('search')) {
+            $query->where('nombre', 'like', "%{$search}%");
+        }
+
+        if ($categoria_id = $request->get('categoria_id')) {
+            $query->where('categoria_id', $categoria_id);
+        }
+
+        $disponible = $request->input('disponible');
+        if ($disponible !== null && $disponible !== '') {
+            $query->where('disponible', $disponible);
+        }
+
+        $productos = $query->orderBy('nombre')->paginate(10);
+
+        $categorias = Categoria::all();
+
+        return view('admin.productos.index', compact('productos', 'categorias'));
     }
 
     /**
@@ -42,10 +60,9 @@ class ProductoController extends Controller
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        $data = $request->all();
+        $data = $request->except('foto');
 
         if ($request->hasFile('foto')) {
-            // Handle foto upload
             $path = $request->file('foto')->store('productos', 'public');
             $data['foto_path'] = $path;
         }
@@ -87,16 +104,19 @@ class ProductoController extends Controller
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        $data = $request->all();
+        $data = $request->except('foto');
 
         if ($request->hasFile('foto')) {
-            // Delete old foto if exists
             if ($producto->foto_path) {
-                Storage::delete('public/' . $producto->foto_path);
+                Storage::disk('public')->delete($producto->foto_path);
             }
-            // Handle foto upload
             $path = $request->file('foto')->store('productos', 'public');
             $data['foto_path'] = $path;
+        }
+
+        if ($request->has('eliminar_foto') && $producto->foto_path) {
+            Storage::disk('public')->delete($producto->foto_path);
+            $data['foto_path'] = null;
         }
 
         $producto->update($data);
@@ -110,9 +130,8 @@ class ProductoController extends Controller
      */
     public function destroy(Producto $producto)
     {
-        // Delete associated foto if exists
         if ($producto->foto_path) {
-            Storage::delete('public/' . $producto->foto_path);
+            Storage::disk('public')->delete($producto->foto_path);
         }
 
         $producto->delete();

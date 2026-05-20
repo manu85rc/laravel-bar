@@ -18,7 +18,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('admin.productos.update', $producto->id) }}" method="POST" class="space-y-6">
+            <form action="{{ route('admin.productos.update', $producto->id) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                 @csrf
                 @method('PUT')
 
@@ -53,7 +53,16 @@
 
                 <div>
                     <label for="foto" class="block text-sm font-medium text-gray-700">Foto (opcional)</label>
-                    <input type="file" name="foto" id="foto" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
+                    @if ($producto->foto_path)
+                        <div class="mt-2 mb-2">
+                            <img src="{{ $producto->fotoUrl() }}" alt="{{ $producto->nombre }}" class="w-32 h-32 object-cover rounded border">
+                        </div>
+                        <div class="flex items-center space-x-2 mb-2">
+                            <input type="checkbox" name="eliminar_foto" id="eliminar_foto" value="1" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                            <label for="eliminar_foto" class="text-sm text-red-600">Eliminar foto actual</label>
+                        </div>
+                    @endif
+                    <input type="file" name="foto" id="foto" accept="image/jpeg,image/png,image/gif,image/svg+xml" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
                     <p class="mt-1 text-xs text-gray-500">Formatos aceptados: JPG, PNG, GIF, SVG (máx. 2MB)</p>
                 </div>
                 <div class="flex items-center">
