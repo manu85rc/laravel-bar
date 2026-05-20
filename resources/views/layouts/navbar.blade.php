@@ -25,14 +25,6 @@
                                    class="px-3 py-2 rounded-md text-sm font-medium {{ request()->is('/dashboard') ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">
                                     Dashboard
                                 </a>
-                                <a href="{{ url('/mesas') }}"
-                                   class="px-3 py-2 rounded-md text-sm font-medium {{ request()->is('/mesas*') && !request()->is('/admin/mesas*') ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">
-                                    Mesas
-                                </a>
-                                <a href="{{ url('/reservas') }}"
-                                   class="px-3 py-2 rounded-md text-sm font-medium {{ request()->is('/reservas*') ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">
-                                    Reservas
-                                </a>
                                 @if (auth()->user()->isAdmin())
                                     <div x-data="{ adminOpen: false }" class="relative">
                                         <button @click="adminOpen = ! adminOpen"
@@ -80,27 +72,48 @@
                     </div>
                     <div class="flex items-center">
                         @auth
-                            <div class="ml-4 flex items-center md:ml-6">
-                                <div class="flex items-center">
+                            <div x-data="{ userOpen: false }" class="ml-4 flex items-center md:ml-6 relative">
+                                <button @click="userOpen = ! userOpen"
+                                        class="flex items-center space-x-2 focus:outline-none">
                                     <div class="flex-shrink-0">
-                                        <img class="h-8 w-8 rounded-full" 
-                                             src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name )}}&background=random&size=128"
-                                             alt="">
+                                        @if (auth()->user()->profile_photo_path)
+                                            <img src="{{ auth()->user()->profilePhotoUrl() }}" alt=""
+                                                 class="h-8 w-8 rounded-full object-cover">
+                                        @else
+                                            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=random&size=128"
+                                                 alt="" class="h-8 w-8 rounded-full">
+                                        @endif
                                     </div>
-                                    <div class="ml-3">
-                                        <div class="text-base font-medium text-gray-900">{{ auth()->user()->name }}</div>
-                                        <div class="text-sm font-medium text-gray-500">{{ auth()->user()->role == 'admin' ? 'Administrador' : 'Usuario' }}</div>
+                                    <div class="hidden md:block text-left">
+                                        <div class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</div>
+                                        <div class="text-xs font-medium text-gray-500">{{ auth()->user()->role == 'admin' ? 'Administrador' : 'Usuario' }}</div>
+                                    </div>
+                                    <svg class="h-4 w-4 text-gray-400" :class="{ 'transform -rotate-180': userOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </button>
+                                <div x-show="userOpen" @click.away="userOpen = false"
+                                     x-transition:enter="transition ease-out duration-200"
+                                     x-transition:enter-start="opacity-0 translate-y-1"
+                                     x-transition:enter-end="opacity-100 translate-y-0"
+                                     x-transition:leave="transition ease-in duration-150"
+                                     x-transition:leave-start="opacity-100 translate-y-0"
+                                     x-transition:leave-end="opacity-0 translate-y-1"
+                                     class="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                                    <div class="py-1">
+                                        <a href="{{ route('profile.edit') }}"
+                                            class="block px-4 py-2 text-sm {{ request()->is('/profile*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-100' }}">
+                                            Editar Perfil
+                                        </a>
+                                        <form method="POST" action="{{ route('logout') }}">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                Cerrar sesión
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
-                                
-                                <form method="POST" action="{{ route('logout') }}"
-                                      class="ml-3 inline">
-                                    @csrf
-                                    <button type="submit"
-                                            class="px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">
-                                        Logout
-                                    </button>
-                                </form>
                             </div>
                         @else
                             <div class="hidden md:block">
@@ -145,18 +158,6 @@
                    class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/dashboard') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
                    @click="setTimeout(() => { open = false; }, 50)">
                     Dashboard
-                </a>
-                
-                <a href="{{ url('/mesas') }}"
-                   class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/mesas*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
-                   @click="setTimeout(() => { open = false; }, 50)">
-                    Mesas
-                </a>
-                
-                <a href="{{ url('/reservas') }}"
-                   class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/reservas*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
-                   @click="setTimeout(() => { open = false; }, 50)">
-                    Reservas
                 </a>
                 
                 @if (auth()->user()->isAdmin())
@@ -211,12 +212,17 @@
             
             @auth
                 <div class="pt-4 pb-3 border-t border-gray-200">
+                    <a href="{{ route('profile.edit') }}"
+                       class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50"
+                       @click="setTimeout(() => { open = false; }, 50)">
+                        Editar Perfil
+                    </a>
                     <form method="POST" action="{{ route('logout') }}" class="space-y-1">
                         @csrf
                         <button type="submit"
                                 class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50"
                                 @click="setTimeout(() => { open = false; }, 50)">
-                            Logout ({{ auth()->user()->name }})
+                            Cerrar sesión
                         </button>
                     </form>
                 </div>

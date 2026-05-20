@@ -21,7 +21,15 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'profile_photo_path',
     ];
+
+    public function profilePhotoUrl()
+    {
+        return $this->profile_photo_path
+            ? asset('storage/' . $this->profile_photo_path)
+            : null;
+    }
 
     /**
      * The attributes that should be hidden for serialization.
