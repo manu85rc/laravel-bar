@@ -8,7 +8,7 @@
                 <h1 class="text-2xl font-semibold text-gray-900">
                     Mesas
                 </h1>
-                <a href="{{ route('mesas.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <a href="{{ route('admin.mesas.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Nueva Mesa
                 </a>
             </div>
@@ -46,8 +46,8 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="{{ route('mesas.edit', $mesa) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Editar</a>
-                                        <form action="{{ route('mesas.destroy', $mesa) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás seguro de eliminar esta mesa?');">
+                                        <a href="{{ route('admin.mesas.edit', $mesa) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Editar</a>
+                                        <form action="{{ route('admin.mesas.destroy', $mesa) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás seguro de eliminar esta mesa?');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 hover:text-red-900">Eliminar</button>

@@ -38,7 +38,7 @@ class MesaController extends Controller
 
         Mesa::create($request->except('_token'));
 
-        return redirect()->route('mesas.index')
+        return redirect()->route('admin.mesas.index')
                         ->with('success', 'Mesa creada exitosamente.');
     }
 
@@ -64,7 +64,7 @@ class MesaController extends Controller
 
         $mesa->update($request->except('_token'));
 
-        return redirect()->route('mesas.index')
+        return redirect()->route('admin.mesas.index')
                         ->with('success', 'Mesa actualizada exitosamente.');
     }
 
@@ -75,7 +75,7 @@ class MesaController extends Controller
     {
         $mesa->delete();
 
-        return redirect()->route('mesas.index')
+        return redirect()->route('admin.mesas.index')
                         ->with('success', 'Mesa eliminada exitosamente.');
     }
 }

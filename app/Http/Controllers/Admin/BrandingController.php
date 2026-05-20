@@ -27,7 +27,7 @@ class BrandingController extends Controller
         $request->validate([
             'app_name' => 'required|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'favicon' => 'nullable|image|mimes:ico,png,jpg,gif,svg|max:2048',
+            'favicon' => 'nullable|file|mimes:ico,png,jpg,gif,svg|max:2048',
         ]);
 
         $branding = Branding::getInstance();
@@ -37,7 +37,7 @@ class BrandingController extends Controller
         if ($request->hasFile('logo')) {
             // Delete old logo if exists
             if ($branding->logo_path) {
-                Storage::delete('public/' . $branding->logo_path);
+                Storage::disk('public')->delete($branding->logo_path);
             }
             $path = $request->file('logo')->store('logos', 'public');
             $data['logo_path'] = $path;
@@ -46,7 +46,7 @@ class BrandingController extends Controller
         if ($request->hasFile('favicon')) {
             // Delete old favicon if exists
             if ($branding->favicon_path) {
-                Storage::delete('public/' . $branding->favicon_path);
+                Storage::disk('public')->delete($branding->favicon_path);
             }
             $path = $request->file('favicon')->store('favicons', 'public');
             $data['favicon_path'] = $path;
@@ -54,7 +54,7 @@ class BrandingController extends Controller
 
         $branding->update($data);
 
-        return redirect()->route('branding.edit')
+        return redirect()->route('admin.branding.edit')
             ->with('success', 'Branding actualizado exitosamente.');
     }
 }

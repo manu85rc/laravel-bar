@@ -19,9 +19,7 @@
                         <div class="bg-indigo-50 p-4 rounded-lg">
                             <h3 class="text-lg font-medium text-indigo-800">Administrador</h3>
                             <p class="mt-2 text-gray-600">Tienes acceso completo al sistema.</p>
-                            <a href="{{ url('/mesas') }}" class="mt-4 inline-block text-indigo-600 font-medium hover:text-indigo-500">
-                                Gestionar mesas
-                            </a>
+
                         </div>
                     @else
                         <div class="bg-green-50 p-4 rounded-lg">

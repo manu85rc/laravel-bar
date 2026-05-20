@@ -4,6 +4,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ isset($branding) ? $branding->app_name : (App\Models\Branding::getInstance()->app_name ?? 'Laravel Bar') }}</title>
+    <!-- Favicon -->
+    @php
+        $faviconUrl = null;
+        if (isset($branding)) {
+            $faviconUrl = $branding->faviconUrl();
+        } else {
+            $faviconUrl = App\Models\Branding::getInstance()->faviconUrl();
+        }
+    @endphp
+    @if ($faviconUrl)
+        <link rel="icon" href="{{ $faviconUrl }}" type="image/x-icon">
+    @endif
     <!-- Tailwind CSS via CDN for simplicity -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Flatpickr for datetime picker -->

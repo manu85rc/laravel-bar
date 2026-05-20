@@ -5,7 +5,7 @@
     <div class="px-6 py-4">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl font-bold text-gray-800">Crear Mesa</h2>
-            <a href="{{ route('mesas.index') }}" class="text-sm text-indigo-600 hover:text-indigo-500">
+            <a href="{{ route('admin.mesas.index') }}" class="text-sm text-indigo-600 hover:text-indigo-500">
                 Volver a la lista
             </a>
         </div>
@@ -20,7 +20,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('mesas.store') }}">
+        <form method="POST" action="{{ route('admin.mesas.store') }}">
             @csrf
 
             <div class="mb-4">

@@ -6,8 +6,16 @@
             <div class="flex justify-between h-16">
                 <div class="flex">
                     <div class="flex-shrink-0 flex items-center">
-                        <a href="{{ url('/') }}" class="text-xl font-semibold text-indigo-600">
-                            🍸 {{ isset($branding) ? $branding->app_name : (App\Models\Branding::getInstance()->app_name ?? 'Laravel Bar') }}
+                        <a href="{{ url('/') }}" class="text-xl font-semibold text-indigo-600 flex items-center space-x-2">
+                            @php
+                                $brandingInstance = isset($branding) ? $branding : App\Models\Branding::getInstance();
+                            @endphp
+                            @if ($brandingInstance->logo_path)
+                                <img src="{{ $brandingInstance->logoUrl() }}" alt="Logo" class="h-8 w-8">
+                            @else
+                                🍸
+                            @endif
+                            <span class="ml-1">{{ $brandingInstance->app_name ?? 'Laravel Bar' }}</span>
                         </a>
                     </div>
                     <div class="hidden md:block">
@@ -19,21 +27,7 @@
                                 </a>
                                 
                                 <!-- Secciones para usuarios autenticados -->
-                                <a href="{{ url('/mesas') }}"
-                                   class="px-3 py-2 rounded-md text-sm font-medium {{ request()->is('/mesas*') ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">
-                                    Mesas
-                                </a>
-                                
-                                <a href="{{ url('/reservas') }}"
-                                   class="px-3 py-2 rounded-md text-sm font-medium {{ request()->is('/reservas*') ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">
-                                    Reservas
-                                </a>
-                                
                                 @if (auth()->user()->isAdmin())
-                                    <a href="{{ url('/admin/users') }}"
-                                       class="px-3 py-2 rounded-md text-sm font-medium {{ request()->is('/admin*') ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">
-                                        Admin
-                                    </a>
                                     <a href="{{ url('/admin/branding/edit') }}"
                                        class="px-3 py-2 rounded-md text-sm font-medium {{ request()->is('/admin/branding*') ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">
                                         Branding
