@@ -18,7 +18,15 @@ class Producto extends Model
         'categoria_id',
         'disponible',
         'foto_path',
+        'tipo',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'disponible' => 'boolean',
+        ];
+    }
 
     public function categoria()
     {
@@ -27,6 +35,6 @@ class Producto extends Model
 
     public function fotoUrl()
     {
-        return $this->foto_path ? asset('storage/' . $this->foto_path) : null;
+        return $this->foto_path ? asset('storage/'.$this->foto_path) : null;
     }
 }

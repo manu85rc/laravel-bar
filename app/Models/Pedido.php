@@ -27,9 +27,9 @@ class Pedido extends Model
     }
 
     /**
-     * Get the user (camarero) that took the pedido.
+     * Get the user (staff) that took the pedido.
      */
-    public function camarero()
+    public function staff()
     {
         return $this->belongsTo(User::class, 'user_id');
     }

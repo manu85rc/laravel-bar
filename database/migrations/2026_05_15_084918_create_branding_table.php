@@ -20,7 +20,7 @@ return new class extends Migration
         });
 
         // Insert default row if none exists
-        \DB::table('branding')->insertOrIgnore([
+        DB::table('branding')->insertOrIgnore([
             'app_name' => 'Mi Bar',
             'logo_path' => null,
             'favicon_path' => null,

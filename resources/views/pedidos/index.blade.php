@@ -1,84 +1,104 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('content')
-<div class="max-w-7xl mx-auto mt-10 px-4">
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-6 bg-white border-b border-gray-200">
-            <div class="flex justify-between items-center">
-                <h1 class="text-2xl font-semibold text-gray-900">
-                    Pedidos
-                </h1>
-                <a href="{{ route('pedidos.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Nuevo Pedido
-                </a>
-            </div>
+    <div class="page-top">
+        <div>
+            <h1 class="page-title">Pedidos</h1>
+            <p class="page-sub">Gestiona los pedidos de las mesas</p>
         </div>
-        <div class="p-6">
-            @if (session('success'))
-                <div class="mb-4 p-4 bg-green-100 border rounded">
-                    {{ session('success') }}
-                </div>
-            @endif
+        <div class="btn-row">
+            <a href="{{ route('pedidos.create') }}" class="btn btn-gold">
+                <i class="fas fa-plus"></i> Nuevo Pedido
+            </a>
+        </div>
+    </div>
 
-            @if ($pedidos->isEmpty())
-                <p class="text-gray-500">No hay pedidos registrados.</p>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+    @if (session('success'))
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if ($pedidos->isEmpty())
+        <div class="empty-state">
+            <i class="fas fa-receipt" style="font-size:32px;margin-bottom:12px;display:block;color:var(--text-4);"></i>
+            No hay pedidos registrados.
+        </div>
+    @else
+        <div class="card">
+            <div class="tbl-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Mesa</th>
+                            <th>Staff</th>
+                            <th>Estado</th>
+                            <th>Total</th>
+                            <th style="text-align:right;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($pedidos as $pedido)
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mesa</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Camarero</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                <th scope="col" class="relative px-6 py-3">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach ($pedidos as $pedido)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $pedido->id }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        Mesa {{ $pedido->mesa->numero }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        @if ($pedido->camarero)
-                                            {{ $pedido->camarero->name }}
-                                        @else
-                                            <span class="text-gray-500">Sin asignar</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $pedido->estado == 'pendiente' ? 'bg-yellow-100 text-yellow-800' : $pedido->estado == 'preparando' ? 'bg-blue-100 text-blue-800' : $pedido->estado == 'listo' ? 'bg-green-100 text-green-800' : $pedido->estado == 'servido' ? 'bg-indigo-100 text-indigo-800' : 'bg-red-100 text-red-800' }}">
-                                            {{ ucfirst($pedido->estado) }}
+                                <td style="font-weight:500;color:var(--text-1);">{{ $pedido->id }}</td>
+                                <td>Mesa {{ $pedido->mesa->numero }}</td>
+                                <td>
+                                    @if ($pedido->staff)
+                                        <span class="ucell">
+                                            <i class="fas fa-user" style="color:var(--text-3);width:16px;"></i>
+                                            {{ $pedido->staff->name }}
                                         </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ number_format($pedido->total, 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="{{ route('pedidos.show', $pedido) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Ver</a>
+                                    @else
+                                        <span style="color:var(--text-4);">Sin asignar</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @php
+                                        $badgeClass = match($pedido->estado) {
+                                            'pendiente' => 'b-amber',
+                                            'preparando' => 'b-blue',
+                                            'listo' => 'b-green',
+                                            'servido' => 'b-green',
+                                            'pagado' => 'b-gray',
+                                            default => 'b-gray'
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $badgeClass }}">
+                                        <span class="bdot"></span>
+                                        {{ ucfirst($pedido->estado) }}
+                                    </span>
+                                </td>
+                                <td style="font-weight:600;color:var(--text-1);">${{ number_format($pedido->total, 0) }}</td>
+                                <td style="text-align:right;">
+                                    <div class="list-item-actions" style="justify-content:flex-end;">
+                                        <a href="{{ route('pedidos.show', $pedido) }}">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
                                         @if (auth()->user()->isAdmin() || $pedido->estado === 'pendiente')
                                             <form action="{{ route('pedidos.updateEstado', $pedido) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás seguro de cambiar el estado?');">
                                                 @csrf
                                                 @method('PUT')
-                                                <select name="estado" class="ml-2 border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                                <select name="estado" class="form-select" style="width:auto;display:inline-block;padding:4px 24px 4px 8px;font-size:11px;">
                                                     <option value="pendiente" {{ $pedido->estado == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
                                                     <option value="preparando" {{ $pedido->estado == 'preparando' ? 'selected' : '' }}>Preparando</option>
                                                     <option value="listo" {{ $pedido->estado == 'listo' ? 'selected' : '' }}>Listo</option>
                                                     <option value="servido" {{ $pedido->estado == 'servido' ? 'selected' : '' }}>Servido</option>
                                                     <option value="pagado" {{ $pedido->estado == 'pagado' ? 'selected' : '' }}>Pagado</option>
                                                 </select>
-                                                <button type="submit" class="ml-2 bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700">Cambiar</button>
+                                                <button type="submit" class="btn-link" style="font-size:11px;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
                                             </form>
                                         @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
-</div>
+    @endif
 @endsection

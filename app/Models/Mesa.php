@@ -12,10 +12,16 @@ class Mesa extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        "numero",
-        "capacidad",
-        "ubicacion",
-        "disponible",
+        'numero',
+        'capacidad',
+        'ubicacion',
+        'piso',
+        'disponible',
+        'pos_x',
+        'pos_y',
+        'forma',
+        'ancho',
+        'alto',
     ];
 
     /**

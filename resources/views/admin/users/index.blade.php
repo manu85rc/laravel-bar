@@ -1,71 +1,86 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('content')
-<div class="max-w-7xl mx-auto mt-10 px-4">
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-6 bg-white border-b border-gray-200">
-            <div class="flex justify-between items-center">
-                <h1 class="text-2xl font-semibold text-gray-900">
-                    Gestión de Usuarios
-                </h1>
-                <a href="{{ route('admin.users.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Nuevo Usuario
-                </a>
-            </div>
-        </div>
-        <div class="p-6">
-            @if (session('success'))
-                <div class="mb-4 p-4 bg-green-100 border rounded">
-                    {{ session('success') }}
-                </div>
-            @endif
-            @if (session('error'))
-                <div class="mb-4 p-4 bg-red-100 border rounded">
-                    {{ session('error') }}
-                </div>
-            @endif
-
-            @if ($users->isEmpty())
-                <p class="text-gray-500 text-center py-8">No hay usuarios registrados.</p>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Registro</th>
-                                <th scope="col" class="relative px-6 py-3">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach ($users as $user)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $user->id }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $user->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $user->email }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $user->role == 'admin' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
-                                            {{ ucfirst($user->role) }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $user->created_at->format('d/m/Y H:i') }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás seguro de eliminar este usuario?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900">Eliminar</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
-        </div>
+<div class="page-top">
+    <div>
+        <div class="page-title">Gestión de Usuarios</div>
+        <div class="page-sub">{{ $users->count() }} usuarios</div>
+    </div>
+    <div class="btn-row">
+        <a href="{{ route('admin.users.create') }}" class="btn btn-gold"><i class="fa-solid fa-plus"></i> Nuevo Usuario</a>
     </div>
 </div>
+
+@if (session('success'))
+    <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> {{ session('success') }}</div>
+@endif
+@if (session('error'))
+    <div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}</div>
+@endif
+
+@if ($users->isEmpty())
+    <div class="empty-state">No hay usuarios registrados.</div>
+@else
+<div class="card">
+    <div class="tbl-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Registro</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($users as $user)
+                    <tr>
+                        <td>{{ $user->id }}</td>
+                        <td>
+                            <div class="ucell">
+                                @php
+                                    $inits = strtoupper(substr($user->name, 0, 1) . substr($user->name, strpos($user->name, ' ') + 1, 1));
+                                    if (strlen($inits) < 2) $inits = strtoupper(substr($user->name, 0, 2));
+                                @endphp
+                                <div class="av-sm a1">{{ $inits }}</div>
+                                <strong>{{ $user->name }}</strong>
+                            </div>
+                        </td>
+                        <td>{{ $user->email }}</td>
+                        <td>
+                            @php
+                                $roleClasses = match($user->role) {
+                                    'super_admin' => 'b-amber',
+                                    'admin' => 'b-blue',
+                                    'staff' => 'b-green',
+                                    default => 'b-gray',
+                                };
+                                $roleLabels = match($user->role) {
+                                    'super_admin' => 'Super Admin',
+                                    'admin' => 'Admin',
+                                    'staff' => 'Staff',
+                                    default => 'Usuario',
+                                };
+                            @endphp
+                            <span class="badge {{ $roleClasses }}"><span class="bdot"></span>{{ $roleLabels }}</span>
+                        </td>
+                        <td>{{ $user->created_at->format('d/m/Y H:i') }}</td>
+                        <td>
+                            <div class="list-item-actions">
+                                <a href="{{ route('admin.users.edit', $user->id) }}">Editar</a>
+                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás seguro?');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn-link danger">Eliminar</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
 @endsection

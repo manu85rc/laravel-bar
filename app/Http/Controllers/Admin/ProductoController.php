@@ -3,16 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Producto;
 use App\Models\Categoria;
+use App\Models\Producto;
+use App\Services\ImageService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ProductoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         $query = Producto::with('categoria');
@@ -37,34 +34,32 @@ class ProductoController extends Controller
         return view('admin.productos.index', compact('productos', 'categorias'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function create(Request $request)
     {
         $categorias = Categoria::all();
-        return view('admin.productos.create', compact('categorias'));
+        $selectedCategoriaId = $request->get('categoria_id');
+
+        return view('admin.productos.create', compact('categorias', 'selectedCategoriaId'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(Request $request, ImageService $image)
     {
         $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
             'categoria_id' => 'nullable|exists:categories,id',
+            'tipo' => 'nullable|in:comida,bebida',
             'disponible' => 'boolean',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
         $data = $request->except('foto');
 
         if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('productos', 'public');
-            $data['foto_path'] = $path;
+            $data['foto_path'] = $image->optimizeAndStore(
+                $request->file('foto'), 'productos', 800, 800, quality: 85
+            );
         }
 
         Producto::create($data);
@@ -73,49 +68,41 @@ class ProductoController extends Controller
             ->with('success', 'Producto creado exitosamente.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Producto $producto)
     {
         return view('admin.productos.show', compact('producto'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Producto $producto)
     {
         $categorias = Categoria::all();
+
         return view('admin.productos.edit', compact('producto', 'categorias'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Producto $producto)
+    public function update(Request $request, Producto $producto, ImageService $image)
     {
         $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
             'categoria_id' => 'nullable|exists:categories,id',
+            'tipo' => 'nullable|in:comida,bebida',
             'disponible' => 'boolean',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
         $data = $request->except('foto');
 
         if ($request->hasFile('foto')) {
-            if ($producto->foto_path) {
-                Storage::disk('public')->delete($producto->foto_path);
-            }
-            $path = $request->file('foto')->store('productos', 'public');
-            $data['foto_path'] = $path;
+            $image->deleteImage($producto->foto_path);
+            $data['foto_path'] = $image->optimizeAndStore(
+                $request->file('foto'), 'productos', 800, 800, quality: 85
+            );
         }
 
         if ($request->has('eliminar_foto') && $producto->foto_path) {
-            Storage::disk('public')->delete($producto->foto_path);
+            $image->deleteImage($producto->foto_path);
             $data['foto_path'] = null;
         }
 
@@ -125,14 +112,9 @@ class ProductoController extends Controller
             ->with('success', 'Producto actualizado exitosamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Producto $producto)
+    public function destroy(Producto $producto, ImageService $image)
     {
-        if ($producto->foto_path) {
-            Storage::disk('public')->delete($producto->foto_path);
-        }
+        $image->deleteImage($producto->foto_path);
 
         $producto->delete();
 

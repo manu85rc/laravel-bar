@@ -12,7 +12,15 @@ class Categoria extends Model
         'name',
         'parent_id',
         'description',
+        'orden',
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope('orden', function ($query) {
+            $query->orderBy('orden');
+        });
+    }
 
     public function parent()
     {

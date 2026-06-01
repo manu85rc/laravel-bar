@@ -1,57 +1,57 @@
-@extends('layouts.app')
+@extends('layouts.guest')
+
+@section('left-headline')
+    Recupera tu acceso
+@endsection
+
+@section('left-subtitle')
+    Te enviaremos un enlace para restablecer tu contraseña.
+@endsection
 
 @section('content')
-<div class="max-w-md mx-auto mt-10 bg-white rounded-lg shadow-md overflow-hidden">
-    <div class="px-6 py-4">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-gray-800">Restablecer contraseña</h2>
-            <a href="{{ route('login') }}" class="text-sm text-indigo-600 hover:text-indigo-500">
-                Volver al inicio de sesión
-            </a>
+<div class="login-title">Restablecer contraseña</div>
+<p class="login-sub">Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
+
+<form method="POST" action="{{ route('password.email') }}" id="resetForm" novalidate>
+    @csrf
+
+    <div class="field @error('email') error @enderror" id="field-email">
+        <label class="field-label" for="email">Correo electrónico</label>
+        <div class="input-wrap">
+            <i class="fa-regular fa-envelope input-icon"></i>
+            <input type="email" name="email" id="email" value="{{ old('email') }}" placeholder="manager@copperstill.com" autocomplete="email"/>
         </div>
-
-        @if (session('status'))
-            <div class="mb-4 p-4 bg-green-100 border rounded">
-                {{ session('status') }}
-            </div>
-        @endif
-
-        @if ($errors->any())
-            <div class="mb-4 p-4 bg-red-100 border rounded">
-                <ul class="list-disc list-inside text-sm text-red-700">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        <form method="POST" action="{{ route('password.email') }}">
-            @csrf
-
-            <div class="mb-4">
-                <label for="email" class="block text-gray-700 text-sm font-bold mb-2">
-                    Correo electrónico
-                </label>
-                <input type="email"
-                       name="email"
-                       id="email"
-                       autocomplete="email"
-                       required
-                       class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                       value="{{ old('email') }}">
-                @if ($errors->has('email'))
-                    <span class="text-red-500 text-sm block mt-1">{{ $errors->first('email') }}</span>
-                @endif
-            </div>
-
-            <div class="mt-6">
-                <button type="submit"
-                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline">
-                    Enviar enlace de restablecimiento
-                </button>
-            </div>
-        </form>
+        <div class="field-err">@error('email') {{ $message }} @else Ingresa un correo válido. @enderror</div>
     </div>
+
+    <button class="btn-submit" type="submit" id="submitBtn">
+        <div class="spinner"></div>
+        <span class="btn-text">Enviar enlace</span>
+        <i class="fa-solid fa-arrow-right" id="btn-arrow"></i>
+    </button>
+</form>
+
+<div class="login-footer">
+    <a href="{{ route('login') }}">Volver al inicio de sesión</a> &nbsp;·&nbsp; <a href="#">Política de privacidad</a>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function validate() {
+    let ok = true;
+    const email = document.getElementById('email').value.trim();
+    document.getElementById('field-email').classList.remove('error');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        document.getElementById('field-email').classList.add('error'); ok = false;
+    }
+    return ok;
+}
+
+document.getElementById('resetForm').addEventListener('submit', function(e) {
+    if (!validate()) { e.preventDefault(); return; }
+    document.getElementById('submitBtn').classList.add('loading');
+    document.getElementById('btn-arrow').style.display = 'none';
+});
+</script>
+@endpush

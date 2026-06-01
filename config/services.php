@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'print_server' => [
+        'url' => env('PRINT_SERVER_URL', 'http://print-server:8080'),
+    ],
+
 ];

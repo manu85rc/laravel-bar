@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('pedidos', function (Blueprint $table) {
             $table->id();
             $table->foreignId('mesa_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade')->nullable(); // camarero que tomó el pedido
+            $table->foreignId('user_id')->constrained()->onDelete('cascade')->nullable(); // staff que tomó el pedido
             $table->string('estado')->default('pendiente'); // pendiente, preparando, listo, servido, pagado
             $table->decimal('total', 10, 2)->default(0);
             $table->timestamps();

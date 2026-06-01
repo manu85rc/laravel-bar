@@ -11,18 +11,33 @@ class RoleMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      * @param  string  $role
-     * @return \Symfony\Component\HttpFoundation\Response
      */
-    public function handle(Request $request, Closure $next, string $role): Response
+    public function handle(Request $request, Closure $next, string $roles): Response
     {
-        if (! $request->user() || ! $request->user()->hasRole($role)) {
-            // Redirect or abort based on preference
-            return redirect('/dashboard')->with('error', 'No tienes permiso para acceder a esta sección.');
+        $user = $request->user();
+
+        if (! $user) {
+            return redirect('/login')->with('error', 'No tienes permiso para acceder a esta sección.');
         }
 
-        return $next($request);
+        if ($user->isSuperAdmin()) {
+            return $next($request);
+        }
+
+        $roleList = explode(',', $roles);
+
+        foreach ($roleList as $role) {
+            if ($user->hasRole(trim($role))) {
+                return $next($request);
+            }
+        }
+
+        if ($user->isUser()) {
+            return redirect('/')->with('error', 'No tienes permiso para acceder a esta sección.');
+        }
+
+        return redirect('/dashboard')->with('error', 'No tienes permiso para acceder a esta sección.');
     }
 }

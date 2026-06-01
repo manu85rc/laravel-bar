@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table("mesas", function (Blueprint $table) {
-            $table->string("numero", 10)->unique();
-            $table->integer("capacidad");
-            $table->string("ubicacion", 50)->nullable();
-            $table->boolean("disponible")->default(true);
+        Schema::table('mesas', function (Blueprint $table) {
+            $table->string('numero', 10)->unique();
+            $table->integer('capacidad');
+            $table->string('ubicacion', 50)->nullable();
+            $table->boolean('disponible')->default(true);
         });
     }
 
@@ -24,8 +24,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table("mesas", function (Blueprint $table) {
-            $table->dropColumn(["numero", "capacidad", "ubicacion", "disponible"]);
+        Schema::table('mesas', function (Blueprint $table) {
+            $table->dropColumn(['numero', 'capacidad', 'ubicacion', 'disponible']);
         });
     }
 };

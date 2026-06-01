@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
-use App\Models\User;
 
 class AuthController extends Controller
 {
@@ -34,6 +34,15 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
+            $user = Auth::user();
+            if ($user->role === User::ROLE_USER && $request->input('redirect_from') === 'reservar') {
+                return redirect()->route('home')->with('open_reservar', true);
+            }
+
+            if ($user->isUser()) {
+                return redirect()->route('home');
+            }
+
             return redirect()->intended('/dashboard');
         }
 
@@ -58,17 +67,23 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', 'string', 'min:8', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()],
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => User::ROLE_USER, // default role
         ]);
 
+        $user->role = User::ROLE_USER;
+        $user->save();
+
         Auth::login($user);
+
+        if ($user->role === User::ROLE_USER && $request->input('redirect_from') === 'reservar') {
+            return redirect()->route('home')->with('open_reservar', true);
+        }
 
         return redirect()->route('dashboard');
     }
@@ -114,7 +129,7 @@ class AuthController extends Controller
         return $status === Password::RESET_LINK_SENT
                     ? back()->with(['status' => __($status)])
                     : back()->withInput($request->only('email'))
-                            ->withErrors(['email' => __($status)]);
+                        ->withErrors(['email' => __($status)]);
     }
 
     /**
@@ -135,7 +150,7 @@ class AuthController extends Controller
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
-            'password' => 'required|min:8|confirmed',
+            'password' => ['required', 'string', 'min:8', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()],
         ]);
 
         // Here we will attempt to reset the user's password. If it is successful we
@@ -145,7 +160,7 @@ class AuthController extends Controller
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
                 $user->forceFill([
-                    'password' => Hash::make($password)
+                    'password' => Hash::make($password),
                 ])->setRememberToken(Str::random(60));
 
                 $user->save();
@@ -157,7 +172,7 @@ class AuthController extends Controller
         // redirect them back to where they came from.
         return $status === Password::PASSWORD_RESET
                     ? redirect()->route('login')->with('status', __($status))
-                    : back()->withInputs($request->only('email'))
-                            ->withErrors(['email' => __($status)]);
+                    : back()->withInput($request->only('email'))
+                        ->withErrors(['email' => __($status)]);
     }
 }

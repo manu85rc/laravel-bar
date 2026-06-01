@@ -2,18 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Reserva;
 use App\Models\Mesa;
-use App\Models\User;
+use App\Models\Reserva;
+use App\Models\ReservationSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ReservaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    private function getDaySlotsJson(ReservationSetting $settings): array
+    {
+        $data = [];
+        foreach (range(1, 7) as $day) {
+            $daySettings = $settings->getDaySettings($day);
+            $groups = $settings->getTimeSlotGroups($day);
+            $allSlots = $settings->generateTimeSlots($day);
+            $data[$day] = [
+                'activo' => $daySettings && $daySettings->activo,
+                'groups' => $groups,
+                'slots' => $allSlots,
+            ];
+        }
+
+        return $data;
+    }
+
     public function index()
     {
         $user = auth()->user();
@@ -27,143 +40,214 @@ class ReservaController extends Controller
         return view('reservas.index', compact('reservas'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
-        // Get available mesas (those that are disponible)
-        $mesas = Mesa::where('disponible', true)->get();
+        $mesas = auth()->user()->isStaff()
+            ? Mesa::where('disponible', true)->get()
+            : collect();
 
-        return view('reservas.create', compact('mesas'));
+        $reservationSettings = ReservationSetting::getInstance();
+        $daySlotsJson = $this->getDaySlotsJson($reservationSettings);
+
+        return view('reservas.create', compact('mesas', 'reservationSettings', 'daySlotsJson'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        $request->validate([
-            'mesa_id' => 'required|exists:mesas,id',
-            'fecha_hora' => 'required|date_format:d-m-Y H:i|after_or_equal:now',
+        $user = auth()->user();
+
+        $rules = [
+            'mesa_id' => 'nullable|exists:mesas,id',
+            'fecha' => 'required|date_format:Y-m-d|after_or_equal:today',
+            'hora' => 'required|date_format:H:i',
             'numero_personas' => 'required|integer|min:1',
             'observaciones' => 'nullable|string|max:255',
-        ], [
-            'mesa_id.required' => 'Debes seleccionar una mesa',
-        ]);
+        ];
 
-        // Check if the selected mesa is still disponible (to avoid race condition)
-        $mesa = Mesa::find($request->mesa_id);
-        if (!$mesa || !$mesa->disponible) {
-            return back()->withInput()->withErrors(['mesa_id' => 'La mesa seleccionada ya no está disponible.']);
+        $messages = [];
+
+        if ($request->mesa_id) {
+            $rules['mesa_id'] = 'required|exists:mesas,id';
+            $messages['mesa_id.required'] = 'Debes seleccionar una mesa';
         }
 
-        // Check if the mesa has enough capacity
-        if ($request->numero_personas > $mesa->capacidad) {
-            return back()->withInput()->withErrors(['numero_personas' => 'La cantidad de personas excede la capacidad de la mesa.']);
+        $request->validate($rules, $messages);
+
+        $settings = ReservationSetting::getInstance();
+
+        $dow = (int) date('N', strtotime($request->fecha));
+        if (! $settings->isDiaActivo($dow)) {
+            return back()->withInput()->withErrors(['fecha' => 'Este día no está habilitado para reservas.']);
         }
 
-        // Create the reservation
-        $reserva = Reserva::create([
-            'user_id' => auth()->id(),
-            'mesa_id' => $request->mesa_id,
-            'fecha_hora' => $request->fecha_hora,
-            'numero_personas' => $request->numero_personas,
-            'observaciones' => $request->observaciones,
-            'estado' => 'pendiente', // default state
-        ]);
+        $slots = $settings->generateTimeSlots($dow);
+        if (! in_array($request->hora, $slots)) {
+            return back()->withInput()->withErrors(['hora' => 'La hora seleccionada no está disponible.']);
+        }
 
-        // Optionally, mark the mesa as not disponible? 
-        // But note: a mesa can be reserved for multiple time slots, so we don't mark it as unavailable globally.
-        // Instead, we should check for overlapping reservations in the same mesa at the same time.
-        // For simplicity, we'll skip that for now and just note that the mesa remains disponible for other times.
+        if ($request->numero_personas > $settings->max_personas) {
+            return back()->withInput()->withErrors(['numero_personas' => 'Máximo '.$settings->max_personas.' personas por reserva.']);
+        }
 
-        return redirect()->route('reservas.index')
-                        ->with('success', 'Reserva creada exitosamente.');
+        return DB::transaction(function () use ($request, $user) {
+            if ($user->isUser()) {
+                $existing = Reserva::where('user_id', $user->id)
+                    ->whereIn('estado', ['pendiente', 'confirmada'])
+                    ->lockForUpdate()
+                    ->exists();
+                if ($existing) {
+                    return back()->withInput()->withErrors([
+                        'fecha_hora' => 'Ya tienes una reserva activa. Completa o cancela esa reserva antes de crear una nueva.',
+                    ]);
+                }
+            }
+
+            $fecha_hora = $request->fecha.' '.$request->hora;
+            $fecha_hora_formatted = date('d-m-Y H:i', strtotime($fecha_hora));
+
+            if ($request->mesa_id) {
+                $mesa = Mesa::find($request->mesa_id);
+                if (! $mesa || ! $mesa->disponible) {
+                    return back()->withInput()->withErrors(['mesa_id' => 'La mesa seleccionada ya no está disponible.']);
+                }
+                if ($request->numero_personas > $mesa->capacidad) {
+                    return back()->withInput()->withErrors(['numero_personas' => 'La cantidad de personas excede la capacidad de la mesa.']);
+                }
+
+                $conflict = Reserva::where('mesa_id', $request->mesa_id)
+                    ->where('fecha_hora', $fecha_hora_formatted)
+                    ->whereIn('estado', ['pendiente', 'confirmada'])
+                    ->exists();
+                if ($conflict) {
+                    return back()->withInput()->withErrors(['mesa_id' => 'La mesa ya está reservada para ese horario.']);
+                }
+            }
+
+            $reserva = Reserva::create([
+                'user_id' => auth()->id(),
+                'mesa_id' => $request->mesa_id,
+                'fecha_hora' => $fecha_hora_formatted,
+                'numero_personas' => $request->numero_personas,
+                'observaciones' => $request->observaciones,
+                'estado' => 'pendiente',
+            ]);
+
+            if ($request->input('redirect_to') === 'home') {
+                return redirect()->route('home')->with('success', 'Reserva creada exitosamente.');
+            }
+
+            return redirect()->route('reservas.index')
+                ->with('success', 'Reserva creada exitosamente.');
+        });
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Reserva  $reserva
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Reserva $reserva)
     {
-        // Authorization: only the owner or admin can edit
-        if (auth()->id() !== $reserva->user_id && !auth()->user()->isAdmin()) {
+        if (auth()->id() !== $reserva->user_id && ! auth()->user()->isAdmin() && ! auth()->user()->isSuperAdmin()) {
             abort(403);
         }
 
-        // Get available mesas (those that are disponible) plus the current mesa (even if not disponible, because we are editing)
-        $mesas = Mesa::where('disponible', true)->orWhere('id', $reserva->mesa_id)->get();
+        $mesas = auth()->user()->isStaff()
+            ? Mesa::where('disponible', true)->orWhere('id', $reserva->mesa_id)->get()
+            : collect();
 
-        return view('reservas.edit', compact('reserva', 'mesas'));
+        $reservationSettings = ReservationSetting::getInstance();
+        $daySlotsJson = $this->getDaySlotsJson($reservationSettings);
+
+        return view('reservas.edit', compact('reserva', 'mesas', 'reservationSettings', 'daySlotsJson'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Reserva  $reserva
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Reserva $reserva)
     {
-        // Authorization: only the owner or admin can update
-        if (auth()->id() !== $reserva->user_id && !auth()->user()->isAdmin()) {
+        if (auth()->id() !== $reserva->user_id && ! auth()->user()->isAdmin() && ! auth()->user()->isSuperAdmin()) {
             abort(403);
         }
 
-        $request->validate([
-            'mesa_id' => 'required|exists:mesas,id',
-            'fecha_hora' => 'required|date_format:d-m-Y H:i|after_or_equal:now',
+        $rules = [
+            'mesa_id' => 'nullable|exists:mesas,id',
+            'fecha' => 'required|date_format:Y-m-d|after_or_equal:today',
+            'hora' => 'required|date_format:H:i',
             'numero_personas' => 'required|integer|min:1',
             'observaciones' => 'nullable|string|max:255',
             'estado' => 'required|in:pendiente,confirmada,completada,cancelada',
-        ], [
-            'mesa_id.required' => 'Debes seleccionar una mesa',
+        ];
+
+        $messages = [];
+
+        if ($request->mesa_id) {
+            $rules['mesa_id'] = 'required|exists:mesas,id';
+            $messages['mesa_id.required'] = 'Debes seleccionar una mesa';
+        }
+
+        $request->validate($rules, $messages);
+
+        $settings = ReservationSetting::getInstance();
+
+        $dow = (int) date('N', strtotime($request->fecha));
+        if (! $settings->isDiaActivo($dow)) {
+            return back()->withInput()->withErrors(['fecha' => 'Este día no está habilitado para reservas.']);
+        }
+
+        $slots = $settings->generateTimeSlots($dow);
+        if (! in_array($request->hora, $slots)) {
+            return back()->withInput()->withErrors(['hora' => 'La hora seleccionada no está disponible.']);
+        }
+
+        if ($request->numero_personas > $settings->max_personas) {
+            return back()->withInput()->withErrors(['numero_personas' => 'Máximo '.$settings->max_personas.' personas por reserva.']);
+        }
+
+        $fecha_hora = $request->fecha.' '.$request->hora;
+        $fecha_hora_formatted = date('d-m-Y H:i', strtotime($fecha_hora));
+
+        if ($request->mesa_id) {
+            $mesa = Mesa::find($request->mesa_id);
+            if (! $mesa || (! $mesa->disponible && $mesa->id !== $reserva->mesa_id)) {
+                return back()->withInput()->withErrors(['mesa_id' => 'La mesa seleccionada ya no está disponible.']);
+            }
+            if ($request->numero_personas > $mesa->capacidad) {
+                return back()->withInput()->withErrors(['numero_personas' => 'La cantidad de personas excede la capacidad de la mesa.']);
+            }
+
+            $conflict = Reserva::where('mesa_id', $request->mesa_id)
+                ->where('fecha_hora', $fecha_hora_formatted)
+                ->whereIn('estado', ['pendiente', 'confirmada'])
+                ->where('id', '!=', $reserva->id)
+                ->exists();
+            if ($conflict) {
+                return back()->withInput()->withErrors(['mesa_id' => 'La mesa ya está reservada para ese horario.']);
+            }
+        }
+
+        $reserva->update([
+            'mesa_id' => $request->mesa_id,
+            'fecha_hora' => $fecha_hora_formatted,
+            'numero_personas' => $request->numero_personas,
+            'observaciones' => $request->observaciones,
+            'estado' => $request->estado,
         ]);
 
-        // Check if the selected mesa is still disponible (or is the same as the current one)
-        $mesa = Mesa::find($request->mesa_id);
-        if (!$mesa || (!$mesa->disponible && $mesa->id !== $request->mesa_id)) {
-            return back()->withInput()->withErrors(['mesa_id' => 'La mesa seleccionada ya no está disponible.']);
+        if ($request->input('redirect_to') === 'home') {
+            return redirect()->route('home')->with('success', 'Reserva actualizada exitosamente.');
         }
-
-        // Check if the mesa has enough capacity
-        if ($request->numero_personas > $mesa->capacidad) {
-            return back()->withInput()->withErrors(['numero_personas' => 'La cantidad de personas excede la capacidad de la mesa.']);
-        }
-
-        // Update the reservation
-        $reserva->update($request->all());
 
         return redirect()->route('reservas.index')
-                        ->with('success', 'Reserva actualizada exitosamente.');
+            ->with('success', 'Reserva actualizada exitosamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Reserva  $reserva
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Reserva $reserva)
+    public function destroy(Request $request, Reserva $reserva)
     {
-        // Authorization: only the owner or admin can delete
-        if (auth()->id() !== $reserva->user_id && !auth()->user()->isAdmin()) {
+        if (auth()->id() !== $reserva->user_id && ! auth()->user()->isAdmin() && ! auth()->user()->isSuperAdmin()) {
             abort(403);
         }
 
         $reserva->delete();
 
+        if ($request->input('redirect_to') === 'home') {
+            return redirect()->route('home')->with('success', 'Reserva eliminada exitosamente.');
+        }
+
         return redirect()->route('reservas.index')
-                        ->with('success', 'Reserva eliminada exitosamente.');
+            ->with('success', 'Reserva eliminada exitosamente.');
     }
 }

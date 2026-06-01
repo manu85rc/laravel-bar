@@ -1,64 +1,106 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('content')
-<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-    <div class="px-4 py-6 sm:px-0">
-        <div class="border-4 border-dashed border-gray-200 rounded-lg h-full">
-            <div class="mb-6">
-                <h2 class="text-2xl font-semibold text-gray-900">Editar Perfil</h2>
-            </div>
+<div class="page-top">
+    <div>
+        <div class="page-title">Editar Perfil</div>
+        <div class="page-sub">{{ auth()->user()->name }}</div>
+    </div>
+</div>
 
-            @if (session('success'))
-                <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-                    {{ session('success') }}
-                </div>
-            @endif
+@if (session('success'))
+    <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> {{ session('success') }}</div>
+@endif
+@if ($errors->any())
+    <div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+@endif
 
-            @if ($errors->any())
-                <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-                    <ul class="list-disc list-inside">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+<div class="content-max">
+    <div class="card">
+        <div class="card-body">
+            <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
+                @csrf @method('PUT')
 
-            <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
-                @csrf
-                @method('PUT')
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label class="form-label" for="name">Nombre</label>
+                        <input type="text" name="name" id="name" class="form-input" value="{{ old('name', auth()->user()->name) }}" required>
+                    </div>
 
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700">Nombre</label>
-                    <input type="text" name="name" id="name"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                           value="{{ old('name', auth()->user()->name) }}" required>
-                </div>
-
-                <div>
-                    <label for="foto" class="block text-sm font-medium text-gray-700">Foto de perfil (opcional)</label>
-                    @if (auth()->user()->profile_photo_path)
-                        <div class="mt-2 mb-2">
-                            <img src="{{ auth()->user()->profilePhotoUrl() }}" alt="Foto de perfil"
-                                 class="w-24 h-24 rounded-full object-cover border">
+                    <div class="form-group full" x-data="{ preview: null }">
+                        <label class="form-label">Foto de perfil</label>
+                        @if (auth()->user()->profile_photo_path)
+                            <img src="{{ auth()->user()->profilePhotoUrl() }}" alt="Foto" class="img-preview" style="width:80px;height:80px;border-radius:50%;margin-top:0;margin-bottom:8px">
+                            <div class="form-checkbox" style="margin-bottom:8px">
+                                <input type="checkbox" name="eliminar_foto" id="eliminar_foto" value="1">
+                                <label for="eliminar_foto" style="color:var(--red-text)">Eliminar foto actual</label>
+                            </div>
+                        @endif
+                        <div class="file-input-wrap">
+                            <input type="file" name="foto" accept="image/jpeg,image/png,image/gif,image/svg+xml,image/webp" @change="preview = URL.createObjectURL($event.target.files[0])">
+                            <span class="form-hint">JPG, PNG, GIF, SVG, WebP — máx. 5MB</span>
                         </div>
-                        <div class="flex items-center space-x-2 mb-2">
-                            <input type="checkbox" name="eliminar_foto" id="eliminar_foto" value="1"
-                                   class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
-                            <label for="eliminar_foto" class="text-sm text-red-600">Eliminar foto actual</label>
+                        <template x-if="preview">
+                            <img :src="preview" alt="Vista previa" class="img-preview" style="width:80px;height:80px;border-radius:50%">
+                        </template>
+                    </div>
+
+                    <div class="form-group full">
+                        <label class="form-label">Apariencia</label>
+                        <div class="theme-options" x-data="{ theme: '{{ auth()->user()->theme }}' }">
+                            <input type="radio" name="theme" value="light" x-model="theme" id="theme-light" style="display:none">
+                            <input type="radio" name="theme" value="dark" x-model="theme" id="theme-dark" style="display:none">
+                            <input type="radio" name="theme" value="system" x-model="theme" id="theme-system" style="display:none">
+
+                            <button type="button" class="theme-option" :class="{ active: theme === 'light' }" @click="setThemeOption('light')">
+                                <i class="fa-solid fa-sun"></i>
+                                <span class="to-label">Claro</span>
+                            </button>
+                            <button type="button" class="theme-option" :class="{ active: theme === 'dark' }" @click="setThemeOption('dark')">
+                                <i class="fa-solid fa-moon"></i>
+                                <span class="to-label">Oscuro</span>
+                            </button>
+                            <button type="button" class="theme-option" :class="{ active: theme === 'system' }" @click="setThemeOption('system')">
+                                <i class="fa-solid fa-desktop"></i>
+                                <span class="to-label">Sistema</span>
+                            </button>
                         </div>
-                    @endif
-                    <input type="file" name="foto" id="foto" accept="image/jpeg,image/png,image/gif,image/svg+xml"
-                           class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
-                    <p class="mt-1 text-xs text-gray-500">Formatos aceptados: JPG, PNG, GIF, SVG (máx. 2MB)</p>
+                    </div>
+
+                    <style>
+                        .theme-options { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+                        .theme-option {
+                            display: flex; flex-direction: column; align-items: center; gap: 8px;
+                            padding: 18px 24px; border-radius: var(--radius-lg);
+                            border: 2px solid var(--border-dim); background: var(--bg-4);
+                            color: var(--text-3); cursor: pointer; font-family: inherit;
+                            transition: all 0.15s; min-width: 100px; flex: 1;
+                        }
+                        .theme-option:hover { border-color: var(--border); color: var(--text-2); }
+                        .theme-option.active { border-color: var(--gold); background: var(--gold-glow); color: var(--gold); }
+                        .theme-option i { font-size: 22px; }
+                        .theme-option .to-label { font-size: 13px; font-weight: 500; }
+                    </style>
+                    <script>
+                        function setThemeOption(theme) {
+                            document.querySelector('input[name="theme"][value="' + theme + '"]').checked = true;
+                            if (typeof setTheme === 'function') setTheme(theme);
+                            fetch('{{ route('profile.updateTheme') }}', {
+                                method: 'PATCH',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({ theme: theme })
+                            });
+                        }
+                    </script>
                 </div>
 
-                <div class="flex items-center justify-between">
-                    <a href="{{ url('/dashboard') }}" class="text-sm text-gray-600 hover:text-gray-900">Cancelar</a>
-                    <button type="submit"
-                            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
-                        Guardar Cambios
-                    </button>
+                <div class="form-actions">
+                    <a href="{{ url('/dashboard') }}" class="btn-link">Cancelar</a>
+                    <button type="submit" class="btn btn-gold">Guardar Cambios</button>
                 </div>
             </form>
         </div>

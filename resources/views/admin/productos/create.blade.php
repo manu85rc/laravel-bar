@@ -1,71 +1,85 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('content')
-<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-    <div class="px-4 py-6 sm:px-0">
-        <div class="border-4 border-dashed border-gray-200 rounded-lg h-full">
-            <div class="mb-6">
-                <h2 class="text-2xl font-semibold text-gray-900">Crear Nuevo Producto</h2>
-            </div>
+<div class="page-top">
+    <div>
+        <div class="page-title">Nuevo Producto</div>
+        <div class="page-sub">Agrega un producto a la carta</div>
+    </div>
+    <a href="{{ route('admin.productos.index') }}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+</div>
 
-            @if ($errors->any())
-                <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-                    <ul class="list-disc list-inside">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+@if ($errors->any())
+    <div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+@endif
 
-            <form action="{{ route('admin.productos.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+<div class="content-max">
+    <div class="card">
+        <div class="card-body">
+            <form action="{{ route('admin.productos.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
-                <div>
-                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
-                    <input type="text" name="nombre" id="nombre" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" value="{{ old('nombre') }}" required>
-                </div>
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label class="form-label" for="nombre">Nombre</label>
+                        <input type="text" name="nombre" id="nombre" class="form-input" value="{{ old('nombre') }}" required>
+                    </div>
 
-                <div>
-                    <label for="descripcion" class="block text-sm font-medium text-gray-700">Descripción (opcional)</label>
-                    <textarea name="descripcion" id="descripcion" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">{{ old('descripcion') }}</textarea>
-                </div>
+                    <div class="form-group full">
+                        <label class="form-label" for="descripcion">Descripción</label>
+                        <textarea name="descripcion" id="descripcion" rows="3" class="form-textarea">{{ old('descripcion') }}</textarea>
+                    </div>
 
-                <div>
-                    <label for="precio" class="block text-sm font-medium text-gray-700">Precio</label>
-                    <input type="number" name="precio" id="precio" step="0.01" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" value="{{ old('precio') }}" required>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label" for="precio">Precio</label>
+                        <input type="number" name="precio" id="precio" step="0.01" min="0" class="form-input" value="{{ old('precio') }}" required>
+                    </div>
 
-                <div>
-                    <label for="categoria_id" class="block text-sm font-medium text-gray-700">Categoría (opcional)</label>
-                    <select name="categoria_id" id="categoria_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                        <option value="">Ninguna</option>
-                        @foreach ($categorias as $categoria)
-                            <option value="{{ $categoria->id }}" {{ old('categoria_id') == $categoria->id ? 'selected' : '' }}>
-                                {{ $categoria->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label" for="categoria_id">Categoría</label>
+                        <select name="categoria_id" id="categoria_id" class="form-select">
+                            <option value="">Ninguna</option>
+                            @foreach ($categorias as $categoria)
+                                <option value="{{ $categoria->id }}" {{ old('categoria_id', $selectedCategoriaId ?? '') == $categoria->id ? 'selected' : '' }}>
+                                    {{ $categoria->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                <div>
-                    <label for="foto" class="block text-sm font-medium text-gray-700">Foto (opcional)</label>
-                    <input type="file" name="foto" id="foto" accept="image/jpeg,image/png,image/gif,image/svg+xml" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
-                    <p class="mt-1 text-xs text-gray-500">Formatos aceptados: JPG, PNG, GIF, SVG (máx. 2MB)</p>
-                </div>
-                <div class="flex items-center">
-                    <div class="flex items-center space-x-2">
-                        <input type="hidden" name="disponible" value="0">
-                        <input type="checkbox" name="disponible" value="1" id="disponible" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" {{ old('disponible', true) ? 'checked' : '' }}>
-                        <label for="disponible" class="ml-2 text-sm font-medium text-gray-700">Disponible</label>
+                    <div class="form-group">
+                        <label class="form-label" for="tipo">Tipo</label>
+                        <select name="tipo" id="tipo" class="form-select">
+                            <option value="">Seleccionar...</option>
+                            <option value="comida" {{ old('tipo') == 'comida' ? 'selected' : '' }}>Comida</option>
+                            <option value="bebida" {{ old('tipo') == 'bebida' ? 'selected' : '' }}>Bebida</option>
+                        </select>
+                        <span class="form-hint">Define si es para cocina o barra</span>
+                    </div>
+
+                    <div class="form-group full" x-data="{ preview: null }">
+                        <label class="form-label">Foto (opcional)</label>
+                        <div class="file-input-wrap">
+                            <input type="file" name="foto" accept="image/jpeg,image/png,image/gif,image/svg+xml,image/webp" @change="preview = URL.createObjectURL($event.target.files[0])">
+                            <span class="form-hint">JPG, PNG, GIF, SVG, WebP — máx. 5MB</span>
+                        </div>
+                        <template x-if="preview">
+                            <img :src="preview" alt="Vista previa" class="img-preview">
+                        </template>
+                    </div>
+
+                    <div class="form-group full">
+                        <div class="form-checkbox">
+                            <input type="hidden" name="disponible" value="0">
+                            <input type="checkbox" name="disponible" value="1" id="disponible" {{ old('disponible', true) ? 'checked' : '' }}>
+                            <label for="disponible">Disponible</label>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between">
-                    <a href="{{ route('admin.productos.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Cancelar</a>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
-                        Crear Producto
-                    </button>
+                <div class="form-actions">
+                    <a href="{{ route('admin.productos.index') }}" class="btn-link">Cancelar</a>
+                    <button type="submit" class="btn btn-gold">Crear Producto</button>
                 </div>
             </form>
         </div>

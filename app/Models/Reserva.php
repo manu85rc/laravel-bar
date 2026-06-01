@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 
 class Reserva extends Model
 {
@@ -14,7 +14,7 @@ class Reserva extends Model
         'fecha_hora',
         'numero_personas',
         'observaciones',
-        'estado'
+        'estado',
     ];
 
     public function setFechaHoraAttribute($value)
@@ -27,6 +27,7 @@ class Reserva extends Model
         if ($value instanceof Carbon) {
             return $value->format('d-m-Y H:i');
         }
+
         return Carbon::parse($value)->format('d-m-Y H:i');
     }
 

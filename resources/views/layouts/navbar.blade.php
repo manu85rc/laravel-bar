@@ -1,38 +1,54 @@
 <!-- Navbar and mobile menu share this scope -->
 <div class="relative" x-data="{ open: false }">
-    <!-- Navbar -->
-    <nav class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex">
-                    <div class="flex-shrink-0 flex items-center">
-                        <a href="{{ url('/') }}" class="text-xl font-semibold text-indigo-600 flex items-center space-x-2">
+    <nav style="background:var(--bg-2);border-bottom:1px solid var(--border)">
+        <div style="max-width:1200px;margin:0 auto;padding:0 20px">
+            <div style="display:flex;justify-content:space-between;height:64px">
+                <div style="display:flex">
+                    <div style="display:flex;align-items:center;flex-shrink:0">
+                        <a href="{{ url('/') }}" style="display:flex;align-items:center;gap:10px;text-decoration:none">
                             @php
                                 $brandingInstance = isset($branding) ? $branding : App\Models\Branding::getInstance();
                             @endphp
                             @if ($brandingInstance->logo_path)
-                                <img src="{{ $brandingInstance->logoUrl() }}" alt="Logo" class="h-8 w-8">
+                                <img src="{{ $brandingInstance->logoUrl() }}" alt="Logo" style="height:34px;width:34px;border-radius:var(--radius)">
                             @else
-                                🍸
+                                <div style="width:34px;height:34px;border-radius:var(--radius);background:var(--gold);display:flex;align-items:center;justify-content:center;color:var(--bg-2);font-size:15px"><i class="fa-solid fa-whiskey-glass"></i></div>
                             @endif
-                            <span class="ml-1">{{ $brandingInstance->app_name ?? 'Laravel Bar' }}</span>
+                            <span style="font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--text-1);letter-spacing:0.01em">{{ $brandingInstance->app_name ?? 'Laravel Bar' }}</span>
                         </a>
                     </div>
-                    <div class="hidden md:block">
-                        <div class="ml-10 flex items-baseline space-x-4">
+                    <div style="display:none;align-items:center" class="nav-links-desk">
+                        <div style="display:flex;align-items:center;gap:2px;margin-left:24px">
                             @auth
+                                @if (auth()->user()->isStaff())
                                 <a href="{{ url('/dashboard') }}"
-                                   class="px-3 py-2 rounded-md text-sm font-medium {{ request()->is('/dashboard') ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">
+                                   style="padding:8px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;text-decoration:none;transition:all .15s;{{ request()->is('dashboard*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                                   onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                                   onmouseout="this.style.background='{{ request()->is('dashboard*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->is('dashboard*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
                                     Dashboard
                                 </a>
-                                @if (auth()->user()->isAdmin())
-                                    <div x-data="{ adminOpen: false }" class="relative">
+                                @endif
+                                <a href="{{ route('reservas.index') }}"
+                                   style="padding:8px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;text-decoration:none;transition:all .15s;{{ request()->routeIs('reservas.*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                                   onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                                   onmouseout="this.style.background='{{ request()->routeIs('reservas.*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('reservas.*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
+                                    Reservas
+                                </a>
+                                @if (auth()->user()->isStaff())
+                                <a href="{{ route('pedidos.index') }}"
+                                   style="padding:8px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;text-decoration:none;transition:all .15s;{{ request()->routeIs('pedidos.*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                                   onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                                   onmouseout="this.style.background='{{ request()->routeIs('pedidos.*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('pedidos.*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
+                                    Pedidos
+                                </a>
+                                @endif
+                                @if (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
+                                    <div x-data="{ adminOpen: false }" style="position:relative">
                                         <button @click="adminOpen = ! adminOpen"
-                                                class="flex items-center px-3 py-2 rounded-md text-sm font-medium {{ request()->is('/admin*') ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">
-                                            Admin
-                                            <svg class="h-4 w-4 ml-1" :class="{ 'transform -rotate-180': adminOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                                            </svg>
+                                                style="padding:8px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:5px;{{ request()->is('admin*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'background:transparent;color:var(--text-3);' }}"
+                                                onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                                                onmouseout="this.style.background='{{ request()->is('admin*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->is('admin*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
+                                            Admin <i class="fa-solid fa-chevron-down" style="font-size:9px" :class="{ 'rotate-180': adminOpen }"></i>
                                         </button>
                                         <div x-show="adminOpen" @click.away="adminOpen = false"
                                              x-transition:enter="transition ease-out duration-200"
@@ -41,26 +57,36 @@
                                              x-transition:leave="transition ease-in duration-150"
                                              x-transition:leave-start="opacity-100 translate-y-0"
                                              x-transition:leave-end="opacity-0 translate-y-1"
-                                             class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                                            <div class="py-1">
-                                                <a href="{{ url('/admin/users') }}"
-                                                   class="block px-4 py-2 text-sm {{ request()->is('/admin/users*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-100' }}">
+                                             style="position:absolute;right:0;top:calc(100% + 8px);width:200px;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:50;overflow:hidden">
+                                            <div style="padding:6px">
+                                                <a href="{{ route('dashboard') }}"
+                                                   style="display:block;padding:9px 12px;border-radius:var(--radius);font-size:13px;text-decoration:none;transition:all .12s;{{ request()->routeIs('dashboard') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                                                   onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                                                   onmouseout="this.style.background='{{ request()->routeIs('dashboard') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('dashboard') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
+                                                    Dashboard
+                                                </a>
+                                                <a href="{{ route('admin.users.index') }}"
+                                                   style="display:block;padding:9px 12px;border-radius:var(--radius);font-size:13px;text-decoration:none;transition:all .12s;{{ request()->routeIs('admin.users.*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                                                   onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                                                   onmouseout="this.style.background='{{ request()->routeIs('admin.users.*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('admin.users.*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
                                                     Usuarios
                                                 </a>
-                                                <a href="{{ url('/admin/mesas') }}"
-                                                   class="block px-4 py-2 text-sm {{ request()->is('/admin/mesas*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-100' }}">
+                                                <a href="{{ route('admin.mesas.index') }}"
+                                                   style="display:block;padding:9px 12px;border-radius:var(--radius);font-size:13px;text-decoration:none;transition:all .12s;{{ request()->routeIs('admin.mesas.*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                                                   onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                                                   onmouseout="this.style.background='{{ request()->routeIs('admin.mesas.*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('admin.mesas.*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
                                                     Mesas
                                                 </a>
-                                                <a href="{{ url('/admin/categorias') }}"
-                                                   class="block px-4 py-2 text-sm {{ request()->is('/admin/categorias*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-100' }}">
-                                                    Categorías
+                                                <a href="{{ route('admin.menu.index') }}"
+                                                   style="display:block;padding:9px 12px;border-radius:var(--radius);font-size:13px;text-decoration:none;transition:all .12s;{{ request()->routeIs('admin.menu.*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                                                   onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                                                   onmouseout="this.style.background='{{ request()->routeIs('admin.menu.*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('admin.menu.*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
+                                                    Menú
                                                 </a>
-                                                <a href="{{ url('/admin/productos') }}"
-                                                   class="block px-4 py-2 text-sm {{ request()->is('/admin/productos*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-100' }}">
-                                                    Productos
-                                                </a>
-                                                <a href="{{ url('/admin/branding/edit') }}"
-                                                   class="block px-4 py-2 text-sm {{ request()->is('/admin/branding*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-100' }}">
+                                                <a href="{{ route('admin.branding.edit') }}"
+                                                   style="display:block;padding:9px 12px;border-radius:var(--radius);font-size:13px;text-decoration:none;transition:all .12s;{{ request()->routeIs('admin.branding.*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                                                   onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                                                   onmouseout="this.style.background='{{ request()->routeIs('admin.branding.*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('admin.branding.*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
                                                     Branding
                                                 </a>
                                             </div>
@@ -70,80 +96,87 @@
                             @endauth
                         </div>
                     </div>
-                    <div class="flex items-center">
-                        @auth
-                            <div x-data="{ userOpen: false }" class="ml-4 flex items-center md:ml-6 relative">
-                                <button @click="userOpen = ! userOpen"
-                                        class="flex items-center space-x-2 focus:outline-none">
-                                    <div class="flex-shrink-0">
-                                        @if (auth()->user()->profile_photo_path)
-                                            <img src="{{ auth()->user()->profilePhotoUrl() }}" alt=""
-                                                 class="h-8 w-8 rounded-full object-cover">
-                                        @else
-                                            <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=random&size=128"
-                                                 alt="" class="h-8 w-8 rounded-full">
-                                        @endif
-                                    </div>
-                                    <div class="hidden md:block text-left">
-                                        <div class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</div>
-                                        <div class="text-xs font-medium text-gray-500">{{ auth()->user()->role == 'admin' ? 'Administrador' : 'Usuario' }}</div>
-                                    </div>
-                                    <svg class="h-4 w-4 text-gray-400" :class="{ 'transform -rotate-180': userOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                                    </svg>
-                                </button>
-                                <div x-show="userOpen" @click.away="userOpen = false"
-                                     x-transition:enter="transition ease-out duration-200"
-                                     x-transition:enter-start="opacity-0 translate-y-1"
-                                     x-transition:enter-end="opacity-100 translate-y-0"
-                                     x-transition:leave="transition ease-in duration-150"
-                                     x-transition:leave-start="opacity-100 translate-y-0"
-                                     x-transition:leave-end="opacity-0 translate-y-1"
-                                     class="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                                    <div class="py-1">
-                                        <a href="{{ route('profile.edit') }}"
-                                            class="block px-4 py-2 text-sm {{ request()->is('/profile*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-100' }}">
-                                            Editar Perfil
-                                        </a>
-                                        <form method="POST" action="{{ route('logout') }}">
-                                            @csrf
-                                            <button type="submit"
-                                                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                Cerrar sesión
-                                            </button>
-                                        </form>
+                </div>
+                <div style="display:flex;align-items:center">
+                    @auth
+                        @php
+                            $avatarInits = strtoupper(substr(auth()->user()->name, 0, 1) . substr(auth()->user()->name, strpos(auth()->user()->name, ' ') + 1, 1));
+                            if (strlen($avatarInits) < 2) $avatarInits = strtoupper(substr(auth()->user()->name, 0, 2));
+                        @endphp
+                        <div x-data="{ userOpen: false }" style="display:flex;align-items:center;position:relative">
+                            <button @click="userOpen = ! userOpen"
+                                    style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--radius);cursor:pointer;border:none;background:transparent;font-family:inherit;transition:background .15s"
+                                    onmouseover="this.style.background='var(--gold-subtle)'"
+                                    onmouseout="this.style.background='transparent'">
+                                @if (auth()->user()->profile_photo_path)
+                                    <img src="{{ auth()->user()->profilePhotoUrl() }}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
+                                @else
+                                    <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dim),var(--gold));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--bg-2)">{{ $avatarInits }}</div>
+                                @endif
+                                <div style="display:none;text-align:left" class="nav-user-desk">
+                                    <div style="font-size:13px;font-weight:500;color:var(--text-2)">{{ auth()->user()->name }}</div>
+                                    <div style="font-size:11px;color:var(--text-3)">
+                                        @php
+                                            $roleL = match(auth()->user()->role) {
+                                                'super_admin' => 'Super Admin',
+                                                'admin' => 'Admin',
+                                                'staff' => 'Staff',
+                                                default => 'Usuario',
+                                            };
+                                        @endphp
+                                        {{ $roleL }}
                                     </div>
                                 </div>
-                            </div>
-                        @else
-                            <div class="hidden md:block">
-                                <a href="{{ route('login') }}"
-                                   class="mr-3 px-3 py-2 rounded-md text-sm font-medium {{ request()->is('login*') ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">
-                                    Iniciar sesión
-                                </a>
-                                <a href="{{ route('register') }}"
-                                   class="px-3 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700">
-                                    Registrarse
-                                </a>
-                            </div>
-                        @endauth
-                        
-                        <!-- Mobile menu button -->
-                        <div class="-mr-2 flex items-center md:hidden">
-                            <button type="button"
-                                    class="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                                    @click="open = !open"
-                                    :aria-expanded="open"
-                                    aria-controls="mobile-menu"
-                                    aria-label="Open main menu">
-                                <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" :class="{'hidden': open, 'inline-flex': !open}">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                                </svg>
-                                <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" :class="{'inline-flex': open, 'hidden': !open}">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                <i class="fa-solid fa-chevron-down" style="font-size:9px;color:var(--text-4);transition:transform .2s" :class="{ 'rotate-180': userOpen }"></i>
                             </button>
+                            <div x-show="userOpen" @click.away="userOpen = false"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 translate-y-0"
+                                 x-transition:leave-end="opacity-0 translate-y-1"
+                                 style="position:absolute;right:0;top:calc(100% + 8px);width:200px;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:50;overflow:hidden">
+                                <div style="padding:6px">
+                                    <a href="{{ route('profile.edit') }}"
+                                       style="display:block;padding:9px 12px;border-radius:var(--radius);font-size:13px;text-decoration:none;color:var(--text-3);transition:all .12s"
+                                       onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                                       onmouseout="this.style.background='transparent';this.style.color='var(--text-3)'">
+                                        Editar Perfil
+                                    </a>
+                                    <form method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button type="submit"
+                                                style="width:100%;text-align:left;padding:9px 12px;border-radius:var(--radius);font-size:13px;background:transparent;color:var(--red-text);border:none;cursor:pointer;font-family:inherit;transition:all .12s"
+                                                onmouseover="this.style.background='var(--red-bg)'"
+                                                onmouseout="this.style.background='transparent'">
+                                            Cerrar sesión
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
+                    @else
+                        <div style="display:none;align-items:center;gap:8px" class="nav-links-desk">
+                            <a href="{{ route('login') }}" class="btn btn-ghost btn-sm">Iniciar sesión</a>
+                            <a href="{{ route('register') }}" class="btn btn-gold btn-sm">Registrarse</a>
+                        </div>
+                    @endauth
+
+                    <!-- Mobile hamburger -->
+                    <div style="display:flex;align-items:center;margin-left:8px" class="nav-hamburger">
+                        <button type="button"
+                                style="width:36px;height:36px;border-radius:var(--radius);background:var(--bg-3);border:1px solid var(--border-dim);color:var(--text-3);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center"
+                                @click="open = !open"
+                                :aria-expanded="open"
+                                aria-label="Menú">
+                            <svg class="block h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" :class="{'hidden': open, 'inline-flex': !open}">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                            </svg>
+                            <svg class="hidden h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" :class="{'inline-flex': open, 'hidden': !open}">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -151,82 +184,126 @@
     </nav>
 
     <!-- Mobile menu -->
-    <div class="md:hidden" id="mobile-menu" x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform translate-x-4 sm:translate-x-0 sm:scale-95" x-transition:enter-end="opacity-100 transform translate-x-0 sm:scale-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-x-0 sm:scale-100" x-transition:leave-end="opacity-0 transform translate-x-4 sm:translate-x-0 sm:scale-95">
-        <div class="pt-2 pb-3 space-y-1">
+    <div style="display:none;background:var(--bg-2);border-bottom:1px solid var(--border);padding:8px 0" class="nav-mobile" x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        <div style="padding:4px 12px">
             @auth
+                @if (auth()->user()->isStaff())
                 <a href="{{ url('/dashboard') }}"
-                   class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/dashboard') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
+                   style="display:block;padding:10px 12px;border-radius:var(--radius);font-size:14px;font-weight:500;text-decoration:none;transition:all .15s;{{ request()->is('dashboard*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                   onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                   onmouseout="this.style.background='{{ request()->is('dashboard*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->is('dashboard*') ? 'var(--gold-light)' : 'var(--text-3)' }}'"
                    @click="setTimeout(() => { open = false; }, 50)">
                     Dashboard
                 </a>
-                
-                @if (auth()->user()->isAdmin())
-                    <div x-data="{ adminOpen: false }" class="relative w-full">
-                        <button @click="adminOpen = ! adminOpen" class="w-full flex items-center justify-between px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}">
-                            Admin
-                            <svg class="h-4 w-4 ml-2" :class="{ 'transform -rotate-180': adminOpen }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                            </svg>
+                @endif
+                <a href="{{ route('reservas.index') }}"
+                   style="display:block;padding:10px 12px;border-radius:var(--radius);font-size:14px;font-weight:500;text-decoration:none;transition:all .15s;{{ request()->routeIs('reservas.*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                   onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                   onmouseout="this.style.background='{{ request()->routeIs('reservas.*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('reservas.*') ? 'var(--gold-light)' : 'var(--text-3)' }}'"
+                   @click="setTimeout(() => { open = false; }, 50)">
+                    Reservas
+                </a>
+                @if (auth()->user()->isStaff())
+                <a href="{{ route('pedidos.index') }}"
+                   style="display:block;padding:10px 12px;border-radius:var(--radius);font-size:14px;font-weight:500;text-decoration:none;transition:all .15s;{{ request()->routeIs('pedidos.*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                   onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                   onmouseout="this.style.background='{{ request()->routeIs('pedidos.*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('pedidos.*') ? 'var(--gold-light)' : 'var(--text-3)' }}'"
+                   @click="setTimeout(() => { open = false; }, 50)">
+                    Pedidos
+                </a>
+                @endif
+                @if (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
+                    <div x-data="{ adminOpen: false }">
+                        <button @click="adminOpen = ! adminOpen"
+                                style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--radius);font-size:14px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s;{{ request()->is('admin*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'background:transparent;color:var(--text-3);' }}"
+                                onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                                onmouseout="this.style.background='{{ request()->is('admin*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->is('admin*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
+                            Admin <i class="fa-solid fa-chevron-down" style="font-size:9px;transition:transform .2s" :class="{ 'rotate-180': adminOpen }"></i>
                         </button>
-                        <div x-show="adminOpen" x-transition x-origin="top" class="mt-2 space-y-1">
-                            <a href="{{ url('/admin/users') }}"
-                               class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin/users*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
-                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)">
+                        <div x-show="adminOpen" x-transition style="padding-left:12px;margin-top:4px">
+                            <a href="{{ route('dashboard') }}"
+                               style="display:block;padding:9px 12px;border-radius:var(--radius);font-size:13px;text-decoration:none;{{ request()->routeIs('dashboard') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)"
+                               onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                               onmouseout="this.style.background='{{ request()->routeIs('dashboard') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('dashboard') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
+                                Dashboard
+                            </a>
+                            <a href="{{ route('admin.users.index') }}"
+                               style="display:block;padding:9px 12px;border-radius:var(--radius);font-size:13px;text-decoration:none;{{ request()->routeIs('admin.users.*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)"
+                               onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                               onmouseout="this.style.background='{{ request()->routeIs('admin.users.*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('admin.users.*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
                                 Usuarios
                             </a>
-                            <a href="{{ url('/admin/mesas') }}"
-                               class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin/mesas*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
-                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)">
+                            <a href="{{ route('admin.mesas.index') }}"
+                               style="display:block;padding:9px 12px;border-radius:var(--radius);font-size:13px;text-decoration:none;{{ request()->routeIs('admin.mesas.*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)"
+                               onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                               onmouseout="this.style.background='{{ request()->routeIs('admin.mesas.*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('admin.mesas.*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
                                 Mesas
                             </a>
-                            <a href="{{ url('/admin/categorias') }}"
-                               class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin/categorias*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
-                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)">
-                                Categorías
+                            <a href="{{ route('admin.menu.index') }}"
+                               style="display:block;padding:9px 12px;border-radius:var(--radius);font-size:13px;text-decoration:none;{{ request()->routeIs('admin.menu.*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)"
+                               onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                               onmouseout="this.style.background='{{ request()->routeIs('admin.menu.*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('admin.menu.*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
+                                Menú
                             </a>
-                            <a href="{{ url('/admin/productos') }}"
-                               class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin/productos*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
-                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)">
-                                Productos
-                            </a>
-                            <a href="{{ url('/admin/branding/edit') }}"
-                               class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('/admin/branding*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
-                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)">
+                            <a href="{{ route('admin.branding.edit') }}"
+                               style="display:block;padding:9px 12px;border-radius:var(--radius);font-size:13px;text-decoration:none;{{ request()->routeIs('admin.branding.*') ? 'background:var(--gold-glow);color:var(--gold-light);' : 'color:var(--text-3);' }}"
+                               @click="setTimeout(() => { open = false; adminOpen = false; }, 50)"
+                               onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                               onmouseout="this.style.background='{{ request()->routeIs('admin.branding.*') ? 'var(--gold-glow)' : 'transparent' }}';this.style.color='{{ request()->routeIs('admin.branding.*') ? 'var(--gold-light)' : 'var(--text-3)' }}'">
                                 Branding
                             </a>
                         </div>
                     </div>
                 @endif
-            @else
-                <a href="{{ route('login') }}"
-                   class="block px-3 py-2 rounded-md text-base font-medium {{ request()->is('login*') ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700 hover:bg-gray-50' }}"
-                   @click="setTimeout(() => { open = false; }, 50)">
-                    Iniciar sesión
-                </a>
-                <a href="{{ route('register') }}"
-                   class="block px-3 py-2 rounded-md text-base font-medium bg-indigo-600 text-white hover:bg-indigo-700"
-                   @click="setTimeout(() => { open = false; }, 50)">
-                    Registrarse
-                </a>
-            @endauth
-            
-            @auth
-                <div class="pt-4 pb-3 border-t border-gray-200">
+                <div style="border-top:1px solid var(--border-dim);margin:8px 12px;padding-top:8px">
                     <a href="{{ route('profile.edit') }}"
-                       class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50"
+                       style="display:block;padding:10px 12px;border-radius:var(--radius);font-size:14px;font-weight:500;text-decoration:none;color:var(--text-3);transition:all .15s"
+                       onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                       onmouseout="this.style.background='transparent';this.style.color='var(--text-3)'"
                        @click="setTimeout(() => { open = false; }, 50)">
                         Editar Perfil
                     </a>
-                    <form method="POST" action="{{ route('logout') }}" class="space-y-1">
+                    <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit"
-                                class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50"
+                                style="width:100%;text-align:left;padding:10px 12px;border-radius:var(--radius);font-size:14px;font-weight:500;background:transparent;color:var(--red-text);border:none;cursor:pointer;font-family:inherit;transition:all .15s"
+                                onmouseover="this.style.background='var(--red-bg)'"
+                                onmouseout="this.style.background='transparent'"
                                 @click="setTimeout(() => { open = false; }, 50)">
                             Cerrar sesión
                         </button>
                     </form>
                 </div>
+            @else
+                <a href="{{ route('login') }}"
+                   style="display:block;padding:10px 12px;border-radius:var(--radius);font-size:14px;font-weight:500;text-decoration:none;color:var(--text-3);transition:all .15s"
+                   onmouseover="this.style.background='var(--gold-subtle)';this.style.color='var(--text-2)'"
+                   onmouseout="this.style.background='transparent';this.style.color='var(--text-3)'"
+                   @click="setTimeout(() => { open = false; }, 50)">
+                    Iniciar sesión
+                </a>
+                <a href="{{ route('register') }}"
+                   style="display:block;margin:4px 12px;padding:10px 12px;border-radius:var(--radius);font-size:14px;font-weight:600;text-decoration:none;background:var(--gold);color:var(--bg-2);transition:all .15s"
+                   onmouseover="this.style.background='var(--gold-light)'"
+                   onmouseout="this.style.background='var(--gold)'"
+                   @click="setTimeout(() => { open = false; }, 50)">
+                    Registrarse
+                </a>
             @endauth
         </div>
     </div>
 </div>
+
+<style>
+    @media(min-width:768px){
+        .nav-links-desk{display:flex !important;}
+        .nav-hamburger{display:none !important;}
+        .nav-user-desk{display:block !important;}
+        .nav-mobile{display:none !important;}
+    }
+    .rotate-180{transform:rotate(180deg) !important;}
+</style>
