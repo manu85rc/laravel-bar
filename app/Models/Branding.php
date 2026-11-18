@@ -20,6 +20,11 @@ class Branding extends Model
         'background_image_path',
         'address',
         'phone',
+        'social_facebook',
+        'social_whatsapp',
+        'social_tiktok',
+        'social_twitter',
+        'social_instagram',
     ];
 
     public static function getInstance()
@@ -32,8 +37,8 @@ class Branding extends Model
             'logo_path' => null,
             'favicon_path' => null,
             'font_family' => null,
-            'primary_color' => '#6366f1',
-            'background_color' => '#f9fafb',
+            'primary_color' => '#0e0d0b',
+            'background_color' => '#0e0d0b',
             'background_image_path' => null,
         ]);
     }

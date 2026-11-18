@@ -45,16 +45,13 @@
                     </div>
 
                     <div class="form-group full">
-                        <label class="form-label" for="role">Rol</label>
-                        <select name="role" id="role" class="form-select" required>
-                            @if (Auth::user()->isSuperAdmin())
-                                <option value="super_admin" {{ old('role', $user->role) == 'super_admin' ? 'selected' : '' }}>Super Administrador</option>
-                                <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Administrador</option>
-                                <option value="user" {{ old('role', $user->role) == 'user' ? 'selected' : '' }}>Usuario</option>
-                            @endif
-                            <option value="staff" {{ old('role', $user->role) == 'staff' ? 'selected' : '' }}>Staff</option>
+                        <label class="form-label" for="role_id">Rol</label>
+                        <select name="role_id" id="role_id" class="form-select" required>
+                            @foreach ($roles as $role)
+                                <option value="{{ $role->id }}" {{ old('role_id', $user->role_id) == $role->id ? 'selected' : '' }}>{{ $role->name }}</option>
+                            @endforeach
                         </select>
-                        @if ($errors->has('role'))<span class="form-error">{{ $errors->first('role') }}</span>@endif
+                        @if ($errors->has('role_id'))<span class="form-error">{{ $errors->first('role_id') }}</span>@endif
                     </div>
                 </div>
 

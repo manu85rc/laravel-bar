@@ -8,9 +8,11 @@ class Printer extends Model
 {
     protected $fillable = [
         'nombre',
+        'conexion',
         'tipo',
         'papel',
         'ruta_dispositivo',
+        'baud_rate',
         'activo',
     ];
 
@@ -18,6 +20,7 @@ class Printer extends Model
     {
         return [
             'activo' => 'boolean',
+            'baud_rate' => 'integer',
         ];
     }
 }

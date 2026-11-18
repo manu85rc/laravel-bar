@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\Branding;
+use App\Models\Mesa;
 use App\Models\Pedido;
 use App\Models\Printer;
+use App\Models\PrintQueueJob;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -39,21 +41,22 @@ class PrintService
                 continue;
             }
 
-            $payload = [
-                'device' => $printer->ruta_dispositivo,
-                'ticket' => [
-                    'type' => 'cocina',
-                    'papel' => $printer->papel ?? '80mm',
-                    'encabezado' => $encabezado,
-                    'pedido_id' => $pedidoId,
-                    'mesa' => $mesa,
-                    'staff' => $staff,
-                    'fecha' => $fecha,
-                    'items' => $items,
-                ],
+            $ticket = [
+                'type' => 'cocina',
+                'papel' => $printer->papel ?? '80mm',
+                'encabezado' => $encabezado,
+                'pedido_id' => $pedidoId,
+                'mesa' => $mesa,
+                'staff' => $staff,
+                'fecha' => $fecha,
+                'items' => $items,
             ];
 
-            $this->sendPrintJob($printer, $payload);
+            if ($printer->conexion === 'bluetooth') {
+                $this->enqueueForBrowser($printer, $ticket);
+            } else {
+                $this->sendToPrintServer($printer, $ticket);
+            }
         }
     }
 
@@ -96,30 +99,125 @@ class PrintService
         $anySuccess = false;
 
         foreach ($printers as $printer) {
-            $payload = [
-                'device' => $printer->ruta_dispositivo,
-                'ticket' => [
-                    'type' => 'factura',
-                    'papel' => $printer->papel ?? '80mm',
-                    'encabezado' => $encabezado,
-                    'pedido_id' => $pedidoId,
-                    'mesa' => $mesa,
-                    'staff' => $staff,
-                    'fecha' => $fecha,
-                    'items' => $items,
-                    'total' => (int) $pedido->total,
-                ],
+            $ticket = [
+                'type' => 'factura',
+                'papel' => $printer->papel ?? '80mm',
+                'encabezado' => $encabezado,
+                'pedido_id' => $pedidoId,
+                'mesa' => $mesa,
+                'staff' => $staff,
+                'fecha' => $fecha,
+                'items' => $items,
+                'total' => (int) $pedido->total,
             ];
 
-            $this->sendPrintJob($printer, $payload);
+            if ($printer->conexion === 'bluetooth') {
+                $this->enqueueForBrowser($printer, $ticket);
+            } else {
+                $this->sendToPrintServer($printer, $ticket);
+            }
+
             $anySuccess = true;
         }
 
         return $anySuccess;
     }
 
-    private function sendPrintJob(Printer $printer, array $payload): void
+    public function printFacturaMesa(Mesa $mesa): bool
     {
+        $printers = Printer::where('activo', true)
+            ->where('tipo', 'factura')
+            ->get();
+
+        if ($printers->isEmpty()) {
+            Log::warning('No factura printers configured');
+
+            return false;
+        }
+
+        $pedidos = $mesa->pedidos()
+            ->with(['productos'])
+            ->whereNotIn('estado', ['pagado', 'cancelado'])
+            ->get();
+
+        if ($pedidos->isEmpty()) {
+            return false;
+        }
+
+        $branding = Branding::getInstance();
+
+        $agregados = [];
+        foreach ($pedidos as $pedido) {
+            foreach ($pedido->productos as $producto) {
+                $cantidad = $producto->pivot->cantidad;
+                $precioUnitario = (int) $producto->pivot->precio_unitario;
+                $key = $producto->id;
+
+                if (isset($agregados[$key])) {
+                    $agregados[$key]['cantidad'] += $cantidad;
+                    $agregados[$key]['subtotal'] += $cantidad * $precioUnitario;
+                } else {
+                    $agregados[$key] = [
+                        'nombre' => $producto->nombre,
+                        'cantidad' => $cantidad,
+                        'precio_unitario' => $precioUnitario,
+                        'subtotal' => $cantidad * $precioUnitario,
+                    ];
+                }
+            }
+        }
+
+        $staffNombres = $pedidos->pluck('staff.name')->filter()->unique();
+
+        $encabezado = $branding->app_name ?? 'Mi Bar';
+        if ($branding->phone) {
+            $encabezado .= "\n".'Tel: '.$branding->phone;
+        }
+
+        $count = $pedidos->count();
+        $anySuccess = false;
+
+        foreach ($printers as $printer) {
+            $ticket = [
+                'type' => 'factura',
+                'papel' => $printer->papel ?? '80mm',
+                'encabezado' => $encabezado,
+                'referencia' => 'Mesa '.$mesa->numero.' — '.$count.' '.($count === 1 ? 'pedido' : 'pedidos'),
+                'mesa' => 'Mesa '.($mesa->numero ?? '?'),
+                'staff' => $staffNombres->isNotEmpty() ? $staffNombres->implode(', ') : '—',
+                'fecha' => now()->format('d/m/Y H:i'),
+                'items' => array_values($agregados),
+                'total' => (int) $pedidos->sum('total'),
+            ];
+
+            if ($printer->conexion === 'bluetooth') {
+                $this->enqueueForBrowser($printer, $ticket);
+            } else {
+                $this->sendToPrintServer($printer, $ticket);
+            }
+
+            $anySuccess = true;
+        }
+
+        return $anySuccess;
+    }
+
+    private function enqueueForBrowser(Printer $printer, array $ticket): void
+    {
+        PrintQueueJob::create([
+            'printer_id' => $printer->id,
+            'ticket_data' => $ticket,
+            'pending' => true,
+        ]);
+    }
+
+    private function sendToPrintServer(Printer $printer, array $ticket): void
+    {
+        $payload = [
+            'device' => $printer->ruta_dispositivo,
+            'ticket' => $ticket,
+        ];
+
         try {
             $response = Http::timeout(5)->post(
                 config('services.print_server.url').'/print',

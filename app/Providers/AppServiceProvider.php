@@ -3,7 +3,11 @@
 namespace App\Providers;
 
 use App\Models\Branding;
+use App\Models\Pedido;
+use App\Models\ReservationSetting;
+use App\Observers\PedidoObserver;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,6 +27,16 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         try {
+            $timezone = DB::table('reservation_settings')->value('timezone');
+        } catch (Exception $e) {
+            $timezone = null;
+        }
+
+        $timezone = $timezone ?: ReservationSetting::DEFAULT_TIMEZONE;
+        date_default_timezone_set($timezone);
+        config(['app.timezone' => $timezone]);
+
+        try {
             $branding = Branding::getInstance();
         } catch (Exception $e) {
             // If table doesn't exist yet (during migration) or any other DB issue
@@ -31,10 +45,13 @@ class AppServiceProvider extends ServiceProvider
             $branding->logo_path = null;
             $branding->favicon_path = null;
             $branding->font_family = null;
-            $branding->primary_color = '#6366f1';
-            $branding->background_color = '#f9fafb';
+            $branding->primary_color = '#0e0d0b';
+            $branding->background_color = '#0e0d0b';
         }
 
         View::share('branding', $branding);
+
+        // Notificaciones: el observer avisará cuando un pedido pasa a 'listo'.
+        Pedido::observe(PedidoObserver::class);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Mesa;
 use App\Models\Reserva;
 use App\Models\ReservationSetting;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -27,21 +28,69 @@ class ReservaController extends Controller
         return $data;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
-        if ($user->isAdmin()) {
-            $reservas = Reserva::with(['user', 'mesa'])->get();
-        } else {
-            $reservas = Reserva::where('user_id', $user->id)->with('mesa')->get();
+        if ($user->isUser()) {
+            return redirect()->route('home');
         }
 
-        return view('reservas.index', compact('reservas'));
+        $tab = $request->get('tab', 'proximas');
+        if (! in_array($tab, ['proximas', 'historial'])) {
+            $tab = 'proximas';
+        }
+
+        $base = ($user->isSuperAdmin() || $user->hasPermission('admin.reservas'))
+            ? Reserva::with(['user', 'mesa'])
+            : Reserva::where('user_id', $user->id)->with('mesa');
+
+        $proximasCount = (clone $base)->where('fecha_hora', '>=', now())->count();
+        $historialCount = (clone $base)
+            ->where('fecha_hora', '<', now())
+            ->where('fecha_hora', '>=', now()->subMonth())
+            ->count();
+
+        if ($tab === 'historial') {
+            $reservas = (clone $base)
+                ->where('fecha_hora', '<', now())
+                ->where('fecha_hora', '>=', now()->subMonth())
+                ->orderByDesc('fecha_hora')
+                ->get();
+        } else {
+            $reservas = (clone $base)
+                ->where('fecha_hora', '>=', now())
+                ->orderBy('fecha_hora')
+                ->get();
+        }
+
+        $grouped = $reservas->groupBy(fn ($r) => Carbon::createFromFormat('d-m-Y H:i', $r->fecha_hora)->locale('es')->isoFormat('dddd DD [de] MMMM [de] YYYY'));
+
+        return view('reservas.index', compact('reservas', 'grouped', 'tab', 'proximasCount', 'historialCount'));
+    }
+
+    public function updateStatus(Request $request, Reserva $reserva)
+    {
+        if (auth()->id() !== $reserva->user_id && ! auth()->user()->isSuperAdmin() && ! auth()->user()->hasPermission('admin.reservas')) {
+            abort(403);
+        }
+
+        $request->validate([
+            'estado' => 'required|in:pendiente,confirmada,completada,cancelada',
+        ]);
+
+        $reserva->update(['estado' => $request->estado]);
+
+        return redirect()->back()
+            ->with('success', 'Reserva actualizada exitosamente.');
     }
 
     public function create()
     {
+        if (auth()->user()->isUser()) {
+            return redirect()->route('home');
+        }
+
         $mesas = auth()->user()->isStaff()
             ? Mesa::where('disponible', true)->get()
             : collect();
@@ -93,6 +142,7 @@ class ReservaController extends Controller
             if ($user->isUser()) {
                 $existing = Reserva::where('user_id', $user->id)
                     ->whereIn('estado', ['pendiente', 'confirmada'])
+                    ->where('fecha_hora', '>=', now())
                     ->lockForUpdate()
                     ->exists();
                 if ($existing) {
@@ -109,9 +159,6 @@ class ReservaController extends Controller
                 $mesa = Mesa::find($request->mesa_id);
                 if (! $mesa || ! $mesa->disponible) {
                     return back()->withInput()->withErrors(['mesa_id' => 'La mesa seleccionada ya no está disponible.']);
-                }
-                if ($request->numero_personas > $mesa->capacidad) {
-                    return back()->withInput()->withErrors(['numero_personas' => 'La cantidad de personas excede la capacidad de la mesa.']);
                 }
 
                 $conflict = Reserva::where('mesa_id', $request->mesa_id)
@@ -133,7 +180,14 @@ class ReservaController extends Controller
             ]);
 
             if ($request->input('redirect_to') === 'home') {
-                return redirect()->route('home')->with('success', 'Reserva creada exitosamente.');
+                return redirect()->route('home')
+                    ->with('success', 'Reserva creada exitosamente.')
+                    ->with('nueva_reserva', [
+                        'fecha' => $request->fecha,
+                        'hora' => $request->hora,
+                        'personas' => $request->numero_personas,
+                        'observaciones' => $request->observaciones,
+                    ]);
             }
 
             return redirect()->route('reservas.index')
@@ -143,7 +197,11 @@ class ReservaController extends Controller
 
     public function edit(Reserva $reserva)
     {
-        if (auth()->id() !== $reserva->user_id && ! auth()->user()->isAdmin() && ! auth()->user()->isSuperAdmin()) {
+        if (auth()->user()->isUser()) {
+            return redirect()->route('home');
+        }
+
+        if (auth()->id() !== $reserva->user_id && ! auth()->user()->isSuperAdmin() && ! auth()->user()->hasPermission('admin.reservas')) {
             abort(403);
         }
 
@@ -159,7 +217,7 @@ class ReservaController extends Controller
 
     public function update(Request $request, Reserva $reserva)
     {
-        if (auth()->id() !== $reserva->user_id && ! auth()->user()->isAdmin() && ! auth()->user()->isSuperAdmin()) {
+        if (auth()->id() !== $reserva->user_id && ! auth()->user()->isSuperAdmin() && ! auth()->user()->hasPermission('admin.reservas')) {
             abort(403);
         }
 
@@ -205,9 +263,6 @@ class ReservaController extends Controller
             if (! $mesa || (! $mesa->disponible && $mesa->id !== $reserva->mesa_id)) {
                 return back()->withInput()->withErrors(['mesa_id' => 'La mesa seleccionada ya no está disponible.']);
             }
-            if ($request->numero_personas > $mesa->capacidad) {
-                return back()->withInput()->withErrors(['numero_personas' => 'La cantidad de personas excede la capacidad de la mesa.']);
-            }
 
             $conflict = Reserva::where('mesa_id', $request->mesa_id)
                 ->where('fecha_hora', $fecha_hora_formatted)
@@ -237,7 +292,7 @@ class ReservaController extends Controller
 
     public function destroy(Request $request, Reserva $reserva)
     {
-        if (auth()->id() !== $reserva->user_id && ! auth()->user()->isAdmin() && ! auth()->user()->isSuperAdmin()) {
+        if (auth()->id() !== $reserva->user_id && ! auth()->user()->isSuperAdmin() && ! auth()->user()->hasPermission('admin.reservas')) {
             abort(403);
         }
 

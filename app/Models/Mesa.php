@@ -13,15 +13,14 @@ class Mesa extends Model
      */
     protected $fillable = [
         'numero',
-        'capacidad',
-        'ubicacion',
-        'piso',
+        'zona_id',
         'disponible',
         'pos_x',
         'pos_y',
         'forma',
         'ancho',
         'alto',
+        'color',
     ];
 
     /**
@@ -30,5 +29,20 @@ class Mesa extends Model
     public function pedidos()
     {
         return $this->hasMany(Pedido::class);
+    }
+
+    public function zona()
+    {
+        return $this->belongsTo(Zona::class);
+    }
+
+    public function reservas()
+    {
+        return $this->hasMany(Reserva::class);
+    }
+
+    public function pagos()
+    {
+        return $this->hasMany(Pago::class);
     }
 }

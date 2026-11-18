@@ -43,6 +43,22 @@
         <input type="number" class="size-input" id="alto-input" min="60" max="180" value="80" onchange="updateSize()">
     </div>
     <div class="toolbar-group">
+        <label class="toolbar-label">Color</label>
+        <div class="color-palette" id="color-palette">
+            <button class="color-swatch clear-btn" data-color="" onclick="selectColor(null)" title="Color por defecto">✕</button>
+            <button class="color-swatch" data-color="#2d8f5e" style="background:#2d8f5e" onclick="selectColor('#2d8f5e')" title="Verde"></button>
+            <button class="color-swatch" data-color="#3a7bbd" style="background:#3a7bbd" onclick="selectColor('#3a7bbd')" title="Azul"></button>
+            <button class="color-swatch" data-color="#7c4dff" style="background:#7c4dff" onclick="selectColor('#7c4dff')" title="Púrpura"></button>
+            <button class="color-swatch" data-color="#e67e22" style="background:#e67e22" onclick="selectColor('#e67e22')" title="Naranja"></button>
+            <button class="color-swatch" data-color="#e74c8b" style="background:#e74c8b" onclick="selectColor('#e74c8b')" title="Rosa"></button>
+            <button class="color-swatch" data-color="#1abc9c" style="background:#1abc9c" onclick="selectColor('#1abc9c')" title="Turquesa"></button>
+            <button class="color-swatch" data-color="#f1c40f" style="background:#f1c40f" onclick="selectColor('#f1c40f')" title="Amarillo"></button>
+            <button class="color-swatch" data-color="#95a5a6" style="background:#95a5a6" onclick="selectColor('#95a5a6')" title="Gris"></button>
+            <button class="color-swatch" data-color="#e74c3c" style="background:#e74c3c" onclick="selectColor('#e74c3c')" title="Rojo"></button>
+            <button class="color-swatch" data-color="#1a1a2e" style="background:#1a1a2e" onclick="selectColor('#1a1a2e')" title="Negro"></button>
+        </div>
+    </div>
+    <div class="toolbar-group">
         <span class="toolbar-label" style="opacity:.5">Mesa <span id="sel-num">—</span></span>
     </div>
 </div>
@@ -60,14 +76,17 @@
                     default => 'Libre',
                 };
             @endphp
-            <div class="mesa-shape {{ $estado }} {{ $mesa->forma }}"
+            <div class="mesa-shape {{ $estado }} {{ $mesa->forma }} {{ $estado === 'free' && $mesa->color ? 'custom-color' : '' }}"
                  data-id="{{ $mesa->id }}"
                  data-numero="{{ $mesa->numero }}"
-                 data-capacidad="{{ $mesa->capacidad }}"
                  data-estado="{{ $estado }}"
                  data-label="{{ $label }}"
-                 style="left:{{ $mesa->pos_x }}px; top:{{ $mesa->pos_y }}px; width:{{ $mesa->ancho }}px; height:{{ $mesa->alto }}px;">
-                <div class="mesa-pax"><i class="fa-solid fa-user"></i> {{ $mesa->capacidad }}</div>
+                 data-color="{{ $mesa->color ?? '' }}"
+                 @if($estado === 'free' && $mesa->color)
+                     style="left:{{ $mesa->pos_x }}px; top:{{ $mesa->pos_y }}px; width:{{ $mesa->ancho }}px; height:{{ $mesa->alto }}px; background:{{ $mesa->color }}; color:{{ $mesa->color === '#f1c40f' || $mesa->color === '#1abc9c' || $mesa->color === '#95a5a6' ? '#1a1816' : '#fff' }};"
+                 @else
+                     style="left:{{ $mesa->pos_x }}px; top:{{ $mesa->pos_y }}px; width:{{ $mesa->ancho }}px; height:{{ $mesa->alto }}px;"
+                 @endif>
                 <div class="mesa-label">{{ $mesa->numero }}</div>
             </div>
         @endforeach
@@ -105,6 +124,14 @@ if (allAtZero) {
     });
 }
 
+function textColorForBg(hex) {
+    if (!hex) return '';
+    var r = parseInt(hex.slice(1,3), 16);
+    var g = parseInt(hex.slice(3,5), 16);
+    var b = parseInt(hex.slice(5,7), 16);
+    return (r * 0.299 + g * 0.587 + b * 0.114) > 160 ? '#1a1816' : '#fff';
+}
+
 function renderizarMesas() {
     var shapes = canvas.querySelectorAll('.mesa-shape');
     var map = {};
@@ -119,7 +146,17 @@ function renderizarMesas() {
             el.style.width = m.ancho + 'px';
             el.style.height = m.alto + 'px';
             el.className = 'mesa-shape ' + el.dataset.estado + ' ' + m.forma;
+            el.dataset.color = m.color || '';
             if (selectedId == m.id) el.classList.add('selected');
+            if (el.dataset.estado === 'free' && m.color) {
+                el.classList.add('custom-color');
+                el.style.background = m.color;
+                el.style.color = textColorForBg(m.color);
+            } else {
+                el.classList.remove('custom-color');
+                el.style.background = '';
+                el.style.color = '';
+            }
         }
     });
 }
@@ -139,6 +176,11 @@ function seleccionarMesa(id) {
         document.querySelectorAll('.shape-btn').forEach(function(btn) {
             btn.classList.toggle('active', btn.dataset.shape === mesa.forma);
         });
+        document.querySelectorAll('#color-palette .color-swatch').forEach(function(sw) {
+            var swColor = sw.dataset.color || null;
+            var mesaColor = mesa.color || null;
+            sw.classList.toggle('active', swColor === mesaColor);
+        });
         var el = canvas.querySelector('.mesa-shape[data-id="' + id + '"]');
         if (el) el.classList.add('selected');
     }
@@ -148,6 +190,19 @@ function deseleccionar() {
     selectedId = null;
     document.getElementById('sel-num').textContent = '—';
     canvas.querySelectorAll('.mesa-shape').forEach(function(el) { el.classList.remove('selected'); });
+    document.querySelectorAll('#color-palette .color-swatch').forEach(function(sw) { sw.classList.remove('active'); });
+}
+
+function selectColor(color) {
+    if (selectedId === null) return;
+    var mesa = mesas.find(function(m) { return m.id === selectedId; });
+    if (!mesa) return;
+    mesa.color = color;
+    document.querySelectorAll('#color-palette .color-swatch').forEach(function(sw) {
+        var swColor = sw.dataset.color || null;
+        sw.classList.toggle('active', swColor === color);
+    });
+    renderizarMesas();
 }
 
 function selectShape(shape) {
@@ -274,6 +329,7 @@ function guardarPlano() {
             forma: m.forma,
             ancho: m.ancho,
             alto: m.alto,
+            color: m.color || null,
         };
     });
 

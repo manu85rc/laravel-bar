@@ -10,9 +10,8 @@ return new class extends Migration
     {
         Schema::table('reservas', function (Blueprint $table) {
             $table->dropForeign(['mesa_id']);
+            $table->unsignedBigInteger('mesa_id')->nullable()->change();
         });
-
-        DB::statement('ALTER TABLE reservas MODIFY COLUMN mesa_id BIGINT UNSIGNED NULL');
 
         Schema::table('reservas', function (Blueprint $table) {
             $table->foreign('mesa_id')->references('id')->on('mesas')->onDelete('cascade');
@@ -23,9 +22,8 @@ return new class extends Migration
     {
         Schema::table('reservas', function (Blueprint $table) {
             $table->dropForeign(['mesa_id']);
+            $table->unsignedBigInteger('mesa_id')->change();
         });
-
-        DB::statement('ALTER TABLE reservas MODIFY COLUMN mesa_id BIGINT UNSIGNED NOT NULL');
 
         Schema::table('reservas', function (Blueprint $table) {
             $table->foreign('mesa_id')->references('id')->on('mesas')->onDelete('cascade');

@@ -6,7 +6,7 @@
         <div class="page-title">Nuevo Producto</div>
         <div class="page-sub">Agrega un producto a la carta</div>
     </div>
-    <a href="{{ route('admin.productos.index') }}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+    <a href="{{ route('admin.menu.index') }}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Volver</a>
 </div>
 
 @if ($errors->any())
@@ -78,7 +78,7 @@
                 </div>
 
                 <div class="form-actions">
-                    <a href="{{ route('admin.productos.index') }}" class="btn-link">Cancelar</a>
+                    <a href="{{ route('admin.menu.index') }}" class="btn-link">Cancelar</a>
                     <button type="submit" class="btn btn-gold">Crear Producto</button>
                 </div>
             </form>

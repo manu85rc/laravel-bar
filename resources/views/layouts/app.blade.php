@@ -7,18 +7,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ isset($branding) ? $branding->app_name : (App\Models\Branding::getInstance()->app_name ?? 'Laravel Bar') }}</title>
-    <!-- Favicon -->
-    @php
-        $faviconUrl = null;
-        if (isset($branding)) {
-            $faviconUrl = $branding->faviconUrl();
-        } else {
-            $faviconUrl = App\Models\Branding::getInstance()->faviconUrl();
-        }
-    @endphp
-    @if ($faviconUrl)
+    @if ($faviconUrl = (isset($branding) ? $branding : App\Models\Branding::getInstance())->faviconUrl())
         <link rel="icon" href="{{ $faviconUrl }}" type="image/x-icon">
     @endif
+    <link rel="manifest" href="{{ route('manifest') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="{{ (isset($branding) ? $branding : App\Models\Branding::getInstance())->primary_color ?? '#c8922a' }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <script>
         (function() {
             var theme = '{{ $userTheme }}';
@@ -27,9 +25,11 @@
                 document.documentElement.classList.add('dark');
             }
             window.__userTheme = theme;
+            window.__isStaff = {{ auth()->check() && auth()->user()->isStaff() ? 'true' : 'false' }};
+            window.__pwaInstallDismissed = {{ session('pwa_install_dismissed') ? 'true' : 'false' }};
         })();
     </script>
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- Google Fonts for branding -->
     @php
         $brandingFont = isset($branding) ? $branding->font_family : (App\Models\Branding::getInstance()->font_family ?? null);
@@ -40,9 +40,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <!-- Flatpickr -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     @php
         $brandingSettings = isset($branding) ? $branding : App\Models\Branding::getInstance();
@@ -199,8 +196,6 @@
             @yield('content')
         </main>
     </div>
-
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <script>
         document.addEventListener('alpine:init', () => {

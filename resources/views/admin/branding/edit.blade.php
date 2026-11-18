@@ -3,7 +3,7 @@
 @section('content')
 <div class="page-top">
     <div>
-        <div class="page-title">Branding</div>
+        <div class="page-title">Configuración</div>
         <div class="page-sub">Personaliza el nombre y logo de tu aplicación</div>
     </div>
 </div>
@@ -35,7 +35,7 @@
                     <div class="form-group full" x-data="{ preview: null }">
                         <label class="form-label">Logo</label>
                         @if ($branding->logoUrl())
-                            <img src="{{ $branding->logoUrl() }}" alt="Logo actual" class="img-preview" style="margin-top:0;margin-bottom:8px;width:auto;max-width:200px;height:auto;max-height:100px">
+                            <img src="{{ $branding->logoUrl() }}" alt="Logo actual" class="img-preview" style="margin-top:0;margin-bottom:8px;object-fit:contain">
                         @else
                             <p class="form-hint" style="margin-bottom:6px">No hay logo establecido</p>
                         @endif
@@ -44,7 +44,7 @@
                             <span class="form-hint">JPG, PNG, GIF, SVG, WebP — máx. 5MB</span>
                         </div>
                         <template x-if="preview">
-                            <img :src="preview" alt="Vista previa" class="img-preview" style="width:auto;max-width:200px;height:auto;max-height:100px">
+                            <img :src="preview" alt="Vista previa" class="img-preview" style="object-fit:contain">
                         </template>
                     </div>
 
@@ -77,11 +77,50 @@
                         <label class="form-label" for="phone">Teléfono</label>
                         <input type="text" name="phone" id="phone" class="form-input" value="{{ old('phone', $branding->phone) }}" placeholder="Ej: +54 341 000-0000">
                     </div>
+
+                    <div class="form-group full">
+                        <div class="card-section-title" style="margin-bottom:8px;padding-top:8px">Redes Sociales</div>
+                    </div>
+
+                    <div class="form-group full">
+                        <label class="form-label" for="social_instagram">
+                            <i class="fa-brands fa-instagram"></i>&nbsp; Instagram
+                        </label>
+                        <input type="text" name="social_instagram" id="social_instagram" class="form-input" value="{{ old('social_instagram', $branding->social_instagram) }}" placeholder="https://instagram.com/tucuenta">
+                    </div>
+
+                    <div class="form-group full">
+                        <label class="form-label" for="social_facebook">
+                            <i class="fa-brands fa-facebook-f"></i>&nbsp; Facebook
+                        </label>
+                        <input type="text" name="social_facebook" id="social_facebook" class="form-input" value="{{ old('social_facebook', $branding->social_facebook) }}" placeholder="https://facebook.com/tupagina">
+                    </div>
+
+                    <div class="form-group full">
+                        <label class="form-label" for="social_whatsapp">
+                            <i class="fa-brands fa-whatsapp"></i>&nbsp; WhatsApp
+                        </label>
+                        <input type="text" name="social_whatsapp" id="social_whatsapp" class="form-input" value="{{ old('social_whatsapp', $branding->social_whatsapp) }}" placeholder="Ej: +54 341 000-0000 o https://wa.me/5493410000000">
+                    </div>
+
+                    <div class="form-group full">
+                        <label class="form-label" for="social_tiktok">
+                            <i class="fa-brands fa-tiktok"></i>&nbsp; TikTok
+                        </label>
+                        <input type="text" name="social_tiktok" id="social_tiktok" class="form-input" value="{{ old('social_tiktok', $branding->social_tiktok) }}" placeholder="https://tiktok.com/@tucuenta">
+                    </div>
+
+                    <div class="form-group full">
+                        <label class="form-label" for="social_twitter">
+                            <i class="fa-brands fa-x-twitter"></i>&nbsp; X (Twitter)
+                        </label>
+                        <input type="text" name="social_twitter" id="social_twitter" class="form-input" value="{{ old('social_twitter', $branding->social_twitter) }}" placeholder="https://x.com/tucuenta">
+                    </div>
                 </div>
 
                 <div class="form-actions">
                     <a href="{{ route('dashboard') }}" class="btn-link">Cancelar</a>
-                    <button type="submit" class="btn btn-gold">Actualizar Branding</button>
+                    <button type="submit" class="btn btn-gold">Actualizar Configuración</button>
                 </div>
             </form>
         </div>

@@ -105,5 +105,60 @@
             </form>
         </div>
     </div>
+
+    @php
+        $user = auth()->user();
+        $linked = $user->socialAccounts()->get()->keyBy('provider');
+        $availableToLink = collect([
+            ['key' => 'google', 'label' => 'Google', 'icon' => 'fa-brands fa-google'],
+            ['key' => 'facebook', 'label' => 'Facebook', 'icon' => 'fa-brends fa-facebook-f'],
+        ])->filter(fn ($p) => filled(config('services.'.$p['key'].'.client_id')) && ! $linked->has($p['key']));
+    @endphp
+
+    <div class="card">
+        <div class="card-body">
+            <div class="form-group">
+                <label class="form-label">Cuentas vinculadas</label>
+                <span class="form-hint">Ingresa también con Google o Facebook sin recordar tu contraseña.</span>
+            </div>
+
+            @if ($linked->isNotEmpty())
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+                    @foreach ($linked as $account)
+                        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--border-dim);border-radius:var(--radius);">
+                            <i class="{{ ['google' => 'fa-brands fa-google', 'facebook' => 'fa-brands fa-facebook-f'][$account->provider] ?? 'fa-solid fa-link' }}" style="color:var(--gold);font-size:16px"></i>
+                            <div style="flex:1;">
+                                <div style="font-size:13px;font-weight:500;">{{ $account->label() }}</div>
+                                @if ($account->nickname)
+                                    <div style="font-size:11px;color:var(--text-4);">{{ $account->nickname }}</div>
+                                @endif
+                            </div>
+                            @if ($user->canUnlinkSocialAccount())
+                                <form action="{{ route('social.unlink', $account) }}" method="POST" onsubmit="return confirm('¿Desvincular {{ $account->label() }}?');">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-ghost" style="color:var(--red-text)">Desvincular</button>
+                                </form>
+                            @else
+                                <span style="font-size:11px;color:var(--text-4);">Única forma de acceso</span>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            @if ($availableToLink->isNotEmpty())
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    @foreach ($availableToLink as $provider)
+                        <a class="btn btn-sm btn-ghost" href="{{ route('social.redirect', ['provider' => $provider['key']]) }}">
+                            <i class="{{ $provider['icon'] }}" style="color:var(--gold);"></i>
+                            Vincular {{ $provider['label'] }}
+                        </a>
+                    @endforeach
+                </div>
+            @elseif ($linked->isNotEmpty())
+                <span class="form-hint">Todas las cuentas sociales disponibles ya están vinculadas.</span>
+            @endif
+        </div>
+    </div>
 </div>
 @endsection

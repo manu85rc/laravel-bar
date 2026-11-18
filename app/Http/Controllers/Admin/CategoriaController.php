@@ -10,9 +10,7 @@ class CategoriaController extends Controller
 {
     public function index()
     {
-        $categorias = Categoria::with('children')->whereNull('parent_id')->get();
-
-        return view('admin.categorias.index', compact('categorias'));
+        return redirect()->route('admin.menu.index');
     }
 
     public function create()
@@ -33,19 +31,22 @@ class CategoriaController extends Controller
 
         $data = $request->only(['name', 'parent_id', 'description', 'orden']);
         if (! isset($data['orden']) || $data['orden'] === '') {
-            $maxOrden = Categoria::whereNull('parent_id')->max('orden');
+            $hermanas = isset($data['parent_id']) && $data['parent_id']
+                ? Categoria::where('parent_id', $data['parent_id'])
+                : Categoria::whereNull('parent_id');
+            $maxOrden = $hermanas->max('orden');
             $data['orden'] = ($maxOrden ?? -1) + 1;
         }
 
         Categoria::create($data);
 
-        return redirect()->route('admin.categorias.index')
+        return redirect()->route('admin.menu.index')
             ->with('success', 'Categoría creada exitosamente.');
     }
 
     public function show(Categoria $categoria)
     {
-        return view('admin.categorias.show', compact('categoria'));
+        return redirect()->route('admin.menu.index');
     }
 
     public function edit(Categoria $categoria)
@@ -66,7 +67,7 @@ class CategoriaController extends Controller
 
         $categoria->update($request->only(['name', 'parent_id', 'description', 'orden']));
 
-        return redirect()->route('admin.categorias.index')
+        return redirect()->route('admin.menu.index')
             ->with('success', 'Categoría actualizada exitosamente.');
     }
 
@@ -74,7 +75,7 @@ class CategoriaController extends Controller
     {
         $categoria->delete();
 
-        return redirect()->route('admin.categorias.index')
+        return redirect()->route('admin.menu.index')
             ->with('success', 'Categoría eliminada exitosamente.');
     }
 

@@ -44,31 +44,37 @@
                                     $inits = strtoupper(substr($user->name, 0, 1) . substr($user->name, strpos($user->name, ' ') + 1, 1));
                                     if (strlen($inits) < 2) $inits = strtoupper(substr($user->name, 0, 2));
                                 @endphp
-                                <div class="av-sm a1">{{ $inits }}</div>
+                                @if ($user->profilePhotoUrl())
+                                    <img src="{{ $user->profilePhotoUrl() }}" alt="{{ $user->name }}" class="av-sm" style="object-fit:cover;">
+                                @else
+                                    <div class="av-sm a1">{{ $inits }}</div>
+                                @endif
                                 <strong>{{ $user->name }}</strong>
                             </div>
                         </td>
                         <td>{{ $user->email }}</td>
                         <td>
-                            @php
-                                $roleClasses = match($user->role) {
-                                    'super_admin' => 'b-amber',
-                                    'admin' => 'b-blue',
-                                    'staff' => 'b-green',
-                                    default => 'b-gray',
-                                };
-                                $roleLabels = match($user->role) {
-                                    'super_admin' => 'Super Admin',
-                                    'admin' => 'Admin',
-                                    'staff' => 'Staff',
-                                    default => 'Usuario',
-                                };
-                            @endphp
-                            <span class="badge {{ $roleClasses }}"><span class="bdot"></span>{{ $roleLabels }}</span>
+                            @if ($user->role)
+                                @php
+                                    $hex = ltrim($user->role->color ?? '#3a7bbd', '#');
+                                    $r = hexdec(substr($hex, 0, 2));
+                                    $g = hexdec(substr($hex, 2, 2));
+                                    $b = hexdec(substr($hex, 4, 2));
+                                @endphp
+                                <span class="badge" style="background:rgba({{ $r }},{{ $g }},{{ $b }},0.12);color:#{{ $hex }}"><span class="bdot"></span>{{ $user->role->name }}</span>
+                            @else
+                                <span class="badge b-gray"><span class="bdot"></span>Sin rol</span>
+                            @endif
                         </td>
                         <td>{{ $user->created_at->format('d/m/Y H:i') }}</td>
                         <td>
                             <div class="list-item-actions">
+                                @if (auth()->user()->isSuperAdmin() && $user->id !== auth()->id())
+                                    <form action="{{ route('admin.users.login-as', $user->id) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" class="btn-link" title="Entrar como este usuario"><i class="fa-solid fa-right-to-bracket"></i> Entrar como</button>
+                                    </form>
+                                @endif
                                 <a href="{{ route('admin.users.edit', $user->id) }}">Editar</a>
                                 <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('¿Estás seguro?');">
                                     @csrf @method('DELETE')

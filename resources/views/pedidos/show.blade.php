@@ -25,7 +25,6 @@
                         <option value="preparando" {{ $pedido->estado == 'preparando' ? 'selected' : '' }}>Preparando</option>
                         <option value="listo" {{ $pedido->estado == 'listo' ? 'selected' : '' }}>Listo</option>
                         <option value="servido" {{ $pedido->estado == 'servido' ? 'selected' : '' }}>Servido</option>
-                        <option value="pagado" {{ $pedido->estado == 'pagado' ? 'selected' : '' }}>Pagado</option>
                     </select>
                     <button type="submit" class="btn btn-gold btn-sm">
                         <i class="fas fa-check"></i> Actualizar
@@ -34,6 +33,31 @@
             @endif
         </div>
     </div>
+
+    @if (session('success'))
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <ul style="margin:0;padding-left:18px;">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     <div class="card">
         <div class="card-body">
@@ -56,9 +80,6 @@
                     <span class="form-label">Mesa</span>
                     <span style="font-size:15px;font-weight:600;color:var(--text-1);">
                         Mesa {{ $pedido->mesa->numero }}
-                        @if ($pedido->mesa->ubicacion)
-                            <span style="color:var(--text-3);font-weight:400;font-size:13px;">({{ $pedido->mesa->ubicacion }})</span>
-                        @endif
                     </span>
                 </div>
                 <div class="form-group">

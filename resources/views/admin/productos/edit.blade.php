@@ -1,12 +1,22 @@
 @extends('layouts.admin')
 
 @section('content')
+<style>
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch-slider { position: absolute; inset: 0; background: var(--border); border-radius: 22px; transition: .15s; cursor: pointer; }
+    .switch-slider::before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .15s; }
+    .switch input:checked + .switch-slider { background: var(--gold); }
+    .switch input:checked + .switch-slider::before { transform: translateX(18px); }
+    .switch-field { display: flex; align-items: center; gap: 10px; }
+    .switch-label { font-size: 13px; color: var(--text-2); cursor: pointer; }
+</style>
 <div class="page-top">
     <div>
         <div class="page-title">Editar Producto</div>
         <div class="page-sub">{{ $producto->nombre }}</div>
     </div>
-    <a href="{{ route('admin.productos.index') }}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+    <a href="{{ route('admin.menu.index') }}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Volver</a>
 </div>
 
 @if ($errors->any())
@@ -68,6 +78,14 @@
                                 <label for="eliminar_foto" style="color:var(--red-text)">Eliminar foto actual</label>
                             </div>
                         @endif
+                        <div class="switch-field" style="margin-bottom:8px">
+                            <input type="hidden" name="mostrar_foto" value="0">
+                            <label class="switch">
+                                <input type="checkbox" name="mostrar_foto" value="1" id="mostrar_foto" {{ old('mostrar_foto', $producto->mostrar_foto) ? 'checked' : '' }}>
+                                <span class="switch-slider"></span>
+                            </label>
+                            <label for="mostrar_foto" class="switch-label">Mostrar foto en el menú</label>
+                        </div>
                         <div class="file-input-wrap">
                             <input type="file" name="foto" accept="image/jpeg,image/png,image/gif,image/svg+xml,image/webp" @change="preview = URL.createObjectURL($event.target.files[0])">
                             <span class="form-hint">JPG, PNG, GIF, SVG, WebP — máx. 5MB</span>
@@ -87,7 +105,7 @@
                 </div>
 
                 <div class="form-actions">
-                    <a href="{{ route('admin.productos.index') }}" class="btn-link">Cancelar</a>
+                    <a href="{{ route('admin.menu.index') }}" class="btn-link">Cancelar</a>
                     <button type="submit" class="btn btn-gold">Actualizar Producto</button>
                 </div>
             </form>

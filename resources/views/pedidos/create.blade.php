@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  @if (auth()->check() && auth()->user()->isStaff())
+    <meta name="vapid-public-key" content="{{ config('webpush.public_key') }}">
+  @endif
   <title>Nuevo Pedido</title>
+  @vite(['resources/js/pos.js'])
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -15,6 +19,9 @@
       var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
       if (isDark) document.documentElement.classList.add('dark');
       window.__userTheme = theme;
+      window.__isStaff = {{ auth()->check() && auth()->user()->isStaff() ? 'true' : 'false' }};
+      window.__pwaEsPos = true;
+      window.__pwaInstallDismissed = {{ session('pwa_install_dismissed') ? 'true' : 'false' }};
     })();
   </script>
   <style>
@@ -319,10 +326,10 @@
     .toast.show { opacity: 1; }
     .toast.error { background: var(--red-bg); color: var(--red-text); border-color: rgba(224,82,82,0.2); }
 
-    .piso-selector{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;}
-    .piso-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border-dim);font-size:12px;cursor:pointer;background:var(--bg-3);color:var(--text-3);font-family:inherit;transition:all .12s;}
-    .piso-btn.active{background:var(--gold);border-color:var(--gold);color:#1a1a18;font-weight:500;}
-    .piso-btn:hover:not(.active){border-color:var(--border);color:var(--text-2);}
+    .zona-selector{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;}
+    .zona-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border-dim);font-size:12px;cursor:pointer;background:var(--bg-3);color:var(--text-3);font-family:inherit;transition:all .12s;}
+    .zona-btn.active{background:var(--gold);border-color:var(--gold);color:#1a1a18;font-weight:500;}
+    .zona-btn:hover:not(.active){border-color:var(--border);color:var(--text-2);}
     .plano-btn{width:34px;height:34px;border-radius:var(--radius);border:1px solid var(--border-dim);background:var(--bg-3);color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all .12s;}
     .plano-btn:hover{border-color:var(--gold);background:var(--gold-subtle);}
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
@@ -330,9 +337,10 @@
     .modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border-dim);font-size:15px;font-weight:600;color:var(--text-1);}
     .modal-close{background:none;border:none;font-size:22px;color:var(--text-3);cursor:pointer;padding:0 4px;line-height:1;}
     .modal-close:hover{color:var(--text-1);}
-    #modal-pisos{padding:10px 18px 0;}
-    #modal-canvas{position:relative;width:100%;min-height:380px;background:var(--bg-4);background-image:linear-gradient(rgba(0,0,0,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.04) 1px,transparent 1px);background-size:20px 20px;overflow:hidden;border-radius:0 0 var(--radius-lg) var(--radius-lg);margin-top:10px;}
+    #modal-zonas{padding:10px 18px 0;}
+    #modal-canvas{position:relative;width:100%;min-height:380px;background:var(--bg-4);background-image:linear-gradient(rgba(0,0,0,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.04) 1px,transparent 1px);background-size:var(--plano-grid,20px) var(--plano-grid,20px);overflow:auto;-webkit-overflow-scrolling:touch;border-radius:0 0 var(--radius-lg) var(--radius-lg);margin-top:10px;}
     .dark #modal-canvas{background-image:linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px);}
+    .plano-stage{position:absolute;top:0;left:0;transform-origin:top left;}
     #modal-canvas .mesa-shape{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid var(--border-dim);user-select:none;transition:box-shadow .15s;}
     #modal-canvas .mesa-shape:hover{box-shadow:0 0 0 3px var(--gold),0 0 12px rgba(200,146,42,0.3);z-index:10;}
     #modal-canvas .mesa-shape.circle{border-radius:50%;}
@@ -369,16 +377,16 @@
         <span>Plano de Mesas</span>
         <button class="modal-close" onclick="cerrarPlanoModal()">&times;</button>
       </div>
-      <div class="piso-selector" id="modal-pisos"></div>
+      <div class="zona-selector" id="modal-zonas"></div>
       <div class="plano-canvas" id="modal-canvas"></div>
     </div>
   </div>
 
   <script>
-    const MENU = @json($menu);
-    const TABLES = @json($tables);
-    const PISOS = @json($pisos);
-    const PLANO_MESAS = @json($planoMesas);
+    let MENU = @json($menu);
+    let TABLES = @json($tables);
+    let PISOS = @json($zonas);
+    let PLANO_MESAS = @json($planoMesas);
 
     let state = {
       cat: Object.keys(MENU)[0] || '',
@@ -425,6 +433,15 @@
       if (btn) btn.disabled = true;
 
       const selectedMesaId = parseInt(document.getElementById('table-sel').value);
+      const productos = items.map(function (i) { return { id: i.id, cantidad: i.qty }; });
+
+      const offlineApp = window.OfflineApp;
+      const offlineFirst = offlineApp && !offlineApp.isOnline();
+
+      if (offlineFirst) {
+        enqueueOffline(selectedMesaId, productos);
+        return;
+      }
 
       try {
         const res = await fetch('{{ route('pedidos.store') }}', {
@@ -470,12 +487,37 @@
         var errorMsg = 'Error de conexi\u00f3n';
         if (e instanceof TypeError && e.message.includes('JSON')) {
           errorMsg = 'Error del servidor: respuesta inv\u00e1lida';
-        } else if (e instanceof TypeError && e.message.includes('fetch')) {
-          errorMsg = 'Error de red: verifique la conexi\u00f3n';
+          showToast(errorMsg, true);
+        } else {
+          // Red caída o falta de conexión -> guardar offline
+          enqueueOffline(selectedMesaId, productos);
+          return;
         }
-        showToast(errorMsg, true);
         if (btn) btn.disabled = false;
       }
+    }
+
+    function enqueueOffline(mesaId, productos) {
+      const offlineApp = window.OfflineApp;
+      if (!offlineApp) {
+        showToast('Error al crear el pedido', true);
+        const btn = document.getElementById('confirm-btn');
+        if (btn) btn.disabled = false;
+        return;
+      }
+      // Fallar rápido esperando mesas y productos definidos (ya validados)
+      offlineApp.enqueuePedido({ mesa_id: mesaId, productos: productos })
+        .then(function () {
+          showToast('Pedido guardado offline: se enviar\u00e1 al reconectar');
+          state.order = {};
+          render();
+        })
+        .catch(function (e) {
+          console.error('Fallo al guardar offline:', e);
+          showToast('No se pudo guardar el pedido', true);
+          const btn = document.getElementById('confirm-btn');
+          if (btn) btn.disabled = false;
+        });
     }
 
     function getFiltered() {
@@ -508,9 +550,9 @@
       app.innerHTML =
         '<div class="left">' +
           (PISOS.length > 1
-            ? '<div class="piso-selector">' +
+            ? '<div class="zona-selector">' +
                 PISOS.map(function (p) {
-                  return '<button class="piso-btn' + (p === state.piso ? ' active' : '') + '" data-piso="' + p + '">' + p + '</button>';
+                  return '<button class="zona-btn' + (p === state.piso ? ' active' : '') + '" data-zona="' + p + '">' + p + '</button>';
                 }).join('') +
               '</div>'
             : ''
@@ -598,8 +640,8 @@
 
       }
 
-      app.querySelectorAll('.piso-btn').forEach(function (b) {
-        b.onclick = function () { state.piso = b.dataset.piso; if (!filteredTables.find(function(t) { return t.id === state.table; })) { state.table = (filteredTables[0] && filteredTables[0].id) || null; } render(); };
+      app.querySelectorAll('.zona-btn').forEach(function (b) {
+        b.onclick = function () { state.piso = b.dataset.zona; if (!filteredTables.find(function(t) { return t.id === state.table; })) { state.table = (filteredTables[0] && filteredTables[0].id) || null; } render(); };
       });
       app.querySelectorAll('.cat-btn').forEach(function (b) {
         b.onclick = function () { state.cat = b.dataset.cat; state.search = ''; render(); };
@@ -620,29 +662,40 @@
     // ===== PLANO MODAL =====
     var modalPiso = state.piso;
 
+    function textColorForBg(hex) {
+        if (!hex) return '';
+        var r = parseInt(hex.slice(1,3), 16);
+        var g = parseInt(hex.slice(3,5), 16);
+        var b = parseInt(hex.slice(5,7), 16);
+        return (r * 0.299 + g * 0.587 + b * 0.114) > 160 ? '#1a1816' : '#fff';
+    }
+
     function renderPlanoModal() {
       var filtered = PLANO_MESAS.filter(function(m) { return !modalPiso || m.piso === modalPiso; });
-      var pisosEl = document.getElementById('modal-pisos');
+      var zonasEl = document.getElementById('modal-zonas');
       var canvasEl = document.getElementById('modal-canvas');
 
-      pisosEl.innerHTML = PISOS.map(function(p) {
-        return '<button class="piso-btn' + (p === modalPiso ? ' active' : '') + '" data-mpiso="' + p + '">' + p + '</button>';
+      zonasEl.innerHTML = PISOS.map(function(p) {
+        return '<button class="zona-btn' + (p === modalPiso ? ' active' : '') + '" data-mzona="' + p + '">' + p + '</button>';
       }).join('');
 
-      pisosEl.querySelectorAll('.piso-btn').forEach(function(b) {
+      zonasEl.querySelectorAll('.zona-btn').forEach(function(b) {
         b.onclick = function() {
-          modalPiso = b.dataset.mpiso;
+          modalPiso = b.dataset.mzona;
           renderPlanoModal();
         };
       });
 
-      canvasEl.innerHTML = filtered.map(function(m) {
+      canvasEl.innerHTML = '<div class="plano-stage" id="modal-stage">' + filtered.map(function(m) {
         var cls = 'mesa-shape ' + m.estado + ' ' + m.forma;
-        return '<div class="' + cls + '" data-mid="' + m.id + '" style="left:' + m.pos_x + 'px;top:' + m.pos_y + 'px;width:' + m.ancho + 'px;height:' + m.alto + 'px;cursor:pointer">' +
-          '<div class="mesa-pax"><i class="fa-solid fa-user"></i> ' + m.capacidad + '</div>' +
+        var style = 'left:' + m.pos_x + 'px;top:' + m.pos_y + 'px;width:' + m.ancho + 'px;height:' + m.alto + 'px;cursor:pointer';
+        if (m.color) {
+          style += ';background:' + m.color + ';color:' + textColorForBg(m.color);
+        }
+        return '<div class="' + cls + '" data-mid="' + m.id + '" style="' + style + '">' +
           '<div class="mesa-label">' + m.numero + '</div>' +
         '</div>';
-      }).join('');
+      }).join('') + '</div>';
 
       canvasEl.querySelectorAll('.mesa-shape').forEach(function(el) {
         el.onclick = function() {
@@ -656,7 +709,43 @@
           render();
         };
       });
+
+      fitPlanoModal();
     }
+
+    function fitPlanoModal() {
+      var canvasEl = document.getElementById('modal-canvas');
+      var stageEl = document.getElementById('modal-stage');
+      if (!canvasEl || !stageEl) return;
+      canvasEl.style.minWidth = '';
+      var contentW = 0, contentH = 0;
+      stageEl.querySelectorAll('.mesa-shape').forEach(function(el) {
+        contentW = Math.max(contentW, parseFloat(el.style.left || 0) + parseFloat(el.style.width || 0));
+        contentH = Math.max(contentH, parseFloat(el.style.top || 0) + parseFloat(el.style.height || 0));
+      });
+      contentW = Math.max(contentW, 1);
+      contentH = Math.max(contentH, 1);
+      var PAD = 24;
+      var availW = canvasEl.clientWidth;
+      var desired = (availW - PAD) / contentW;
+      var scale = Math.min(1, Math.max(0.3, desired));
+      var offsetX = scale < 1 ? Math.max(0, (availW - contentW * scale) / 2) : 0;
+      stageEl.style.transform = 'translate(' + offsetX + 'px, 0) scale(' + scale + ')';
+      var maxH = Math.max(220, window.innerHeight * 0.62);
+      var altura = Math.min(Math.max(contentH * scale + PAD, 380), maxH);
+      canvasEl.style.height = altura + 'px';
+      canvasEl.style.minHeight = altura + 'px';
+      canvasEl.style.setProperty('--plano-grid', (20 * scale) + 'px');
+      if (contentW * scale + PAD > availW) {
+        canvasEl.style.minWidth = (contentW * scale + PAD) + 'px';
+      } else {
+        canvasEl.style.minWidth = '';
+      }
+    }
+
+    window.addEventListener('resize', function() {
+      if (document.getElementById('plano-modal').style.display === 'flex') fitPlanoModal();
+    });
 
     function abrirPlanoModal() {
       modalPiso = state.piso;
@@ -669,6 +758,70 @@
     }
 
     render();
+
+    // ===== OFFLINE =====
+    // Si se está cargando esta página sin conexión (HTML servido desde la caché
+    // del service worker), se hidrata menú y mesas desde los snapshots precacheados
+    // en IndexedDB para mostrar datos lo más recientes posible.
+    function hydrateFromSnapshot(mesasSnap, menuSnap) {
+      if (mesasSnap && mesasSnap.length) {
+        PLANO_MESAS = mesasSnap;
+        TABLES = mesasSnap.map(function (m) {
+          return { id: m.id, label: 'Mesa ' + m.numero, piso: m.piso };
+        });
+        PISOS = [];
+        mesasSnap.forEach(function (m) {
+          if (m.piso && PISOS.indexOf(m.piso) === -1) PISOS.push(m.piso);
+        });
+        if (!state.table && TABLES.length) state.table = TABLES[0].id;
+      }
+      if (menuSnap && Object.keys(menuSnap).length) {
+        MENU = menuSnap;
+        if (!state.cat || !MENU[state.cat]) state.cat = Object.keys(MENU)[0] || '';
+      }
+      render();
+      if (window.renderPlanoModal) renderPlanoModal();
+    }
+
+    function esperarOfflineApp(callback) {
+      var attempts = 0;
+      var timer = setInterval(function () {
+        attempts++;
+        if (window.OfflineApp || attempts > 20) {
+          clearInterval(timer);
+          if (window.OfflineApp) callback(window.OfflineApp);
+        }
+      }, 50);
+    }
+
+    // Al volver la conexión, refrescar menú/mesas en caliente (sin recargar,
+    // para no perder el pedido que se está armando).
+    window.addEventListener('app:data-refreshed', function (evento) {
+      esperarOfflineApp(function (offlineApp) {
+        var datos = (evento && evento.detail) || {};
+        if (datos.mesas || datos.menu) {
+          hydrateFromSnapshot(datos.mesas, datos.menu);
+          return;
+        }
+        offlineApp.refreshSnapshots().then(function (snaps) {
+          if (snaps) hydrateFromSnapshot(snaps.mesas, snaps.menu);
+        });
+      });
+    });
+
+    window.addEventListener('load', function () {
+      esperarOfflineApp(function (offlineApp) {
+        offlineApp.precacheSnapshots();
+        if (offlineApp.isOnline()) return;
+
+        Promise.all([
+          offlineApp.loadSnapshot('mesas'),
+          offlineApp.loadSnapshot('menu')
+        ]).then(function (res) {
+          hydrateFromSnapshot(res[0], res[1]);
+        });
+      });
+    });
   </script>
 </body>
 </html>

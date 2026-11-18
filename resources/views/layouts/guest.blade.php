@@ -4,6 +4,17 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>The Copper Still — @yield('page-title', 'Admin Console')</title>
+@php
+    $guestBranding = \App\Models\Branding::getInstance();
+    $guestThemeColor = $guestBranding->primary_color ?? '#c8922a';
+@endphp
+<link rel="manifest" href="{{ route('manifest') }}">
+<meta name="theme-color" content="{{ $guestThemeColor }}">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+@vite(['resources/js/app.js'])
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -364,6 +375,9 @@ input:focus + .focus-line,
   transition:all .15s;
 }
 .btn-sso:hover{border-color:var(--border);color:var(--text-1);background:var(--bg-4);}
+
+.social-buttons{display:flex;flex-direction:column;gap:10px;}
+a.btn-sso{text-decoration:none;}
 
 .login-footer{
   margin-top:28px;

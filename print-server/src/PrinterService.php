@@ -28,7 +28,7 @@ class PrinterService
             $printer->feed(1);
 
             $printer->setEmphasis(true);
-            $printer->text("PEDIDO #{$ticket['pedido_id']}\n");
+            $printer->text(($ticket['referencia'] ?? 'PEDIDO #'.$ticket['pedido_id'])."\n");
             $printer->setEmphasis(false);
 
             $printer->text("Mesa: {$ticket['mesa']}\n");

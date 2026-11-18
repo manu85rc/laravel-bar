@@ -6,11 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class ReservationSetting extends Model
 {
+    public const DEFAULT_TIMEZONE = 'America/Argentina/Buenos_Aires';
+
     protected $table = 'reservation_settings';
 
     protected $fillable = [
         'intervalo_minutos',
         'max_personas',
+        'timezone',
     ];
 
     public static function getInstance()
@@ -18,10 +21,29 @@ class ReservationSetting extends Model
         $instance = self::firstOrCreate([], [
             'intervalo_minutos' => 15,
             'max_personas' => 20,
+            'timezone' => self::DEFAULT_TIMEZONE,
         ]);
         $instance->initDays();
 
         return $instance;
+    }
+
+    public static function timezones(): array
+    {
+        return [
+            'America/Argentina/Buenos_Aires',
+            'America/Asuncion',
+            'America/Caracas',
+            'America/Bogota',
+            'America/Lima',
+            'America/Montevideo',
+            'America/Santiago',
+            'America/Sao_Paulo',
+            'America/Mexico_City',
+            'Europe/Madrid',
+            'Europe/Lisbon',
+            'UTC',
+        ];
     }
 
     public function daySettings()

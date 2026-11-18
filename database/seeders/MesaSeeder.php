@@ -3,21 +3,18 @@
 namespace Database\Seeders;
 
 use App\Models\Mesa;
+use App\Models\Zona;
 use Illuminate\Database\Seeder;
 
 class MesaSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Create some sample mesas
+        $zona = Zona::firstOrCreate(['nombre' => 'Planta Baja']);
+
         Mesa::create([
             'numero' => 'M1',
-            'capacidad' => 2,
-            'ubicacion' => 'Interior',
-            'piso' => 'Planta Baja',
+            'zona_id' => $zona->id,
             'disponible' => true,
             'pos_x' => 30,
             'pos_y' => 30,
@@ -28,9 +25,7 @@ class MesaSeeder extends Seeder
 
         Mesa::create([
             'numero' => 'M2',
-            'capacidad' => 4,
-            'ubicacion' => 'Terraza',
-            'piso' => 'Planta Baja',
+            'zona_id' => $zona->id,
             'disponible' => true,
             'pos_x' => 170,
             'pos_y' => 30,
@@ -41,9 +36,7 @@ class MesaSeeder extends Seeder
 
         Mesa::create([
             'numero' => 'M3',
-            'capacidad' => 6,
-            'ubicacion' => 'Interior',
-            'piso' => 'Planta Baja',
+            'zona_id' => $zona->id,
             'disponible' => true,
             'pos_x' => 30,
             'pos_y' => 170,
@@ -54,9 +47,7 @@ class MesaSeeder extends Seeder
 
         Mesa::create([
             'numero' => 'M4',
-            'capacidad' => 8,
-            'ubicacion' => 'Terraza',
-            'piso' => 'Planta Baja',
+            'zona_id' => $zona->id,
             'disponible' => true,
             'pos_x' => 200,
             'pos_y' => 170,

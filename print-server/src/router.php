@@ -40,6 +40,28 @@ if ($uri === '/print' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+if ($uri === '/devices' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    header('Content-Type: application/json');
+
+    $paths = [];
+    foreach (glob('/dev/usb/lp*') ?: [] as $path) {
+        if (is_readable($path)) {
+            $paths[] = $path;
+        }
+    }
+    foreach (glob('/dev/lp*') ?: [] as $path) {
+        if (is_readable($path)) {
+            $paths[] = $path;
+        }
+    }
+
+    natsort($paths);
+    $paths = array_values(array_unique($paths));
+
+    echo json_encode(['success' => true, 'devices' => $paths]);
+    exit;
+}
+
 if ($uri === '/health' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     header('Content-Type: application/json');
     echo json_encode(['status' => 'ok']);

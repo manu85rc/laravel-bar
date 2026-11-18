@@ -2,42 +2,40 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class AdminUserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Migrate old admin if exists (from previous seeder)
+        $superAdminRole = Role::where('slug', 'super_admin')->first();
+        $userRole = Role::where('slug', 'user')->first();
+
         User::where('email', 'admin@example.com')->update([
             'email' => 'admin@admin.com',
             'name' => 'Super Administrador',
             'password' => Hash::make('password'),
-            'role' => User::ROLE_SUPER_ADMIN,
+            'role_id' => $superAdminRole?->id,
         ]);
 
-        // Create or update super admin
         User::updateOrCreate(
             ['email' => 'admin@admin.com'],
             [
                 'name' => 'Super Administrador',
                 'password' => Hash::make('password'),
-                'role' => User::ROLE_SUPER_ADMIN,
+                'role_id' => $superAdminRole?->id,
             ]
         );
 
-        // Create a regular user if not exists
         User::firstOrCreate(
             ['email' => 'user@example.com'],
             [
                 'name' => 'Usuario Regular',
                 'password' => Hash::make('user123'),
-                'role' => User::ROLE_USER,
+                'role_id' => $userRole?->id,
             ]
         );
     }

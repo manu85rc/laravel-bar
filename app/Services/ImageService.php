@@ -35,7 +35,7 @@ class ImageService
         }
 
         $image = $this->manager->decode($file->getRealPath());
-        $image->resizeDown(width: $maxWidth, height: $maxHeight);
+        $image->scaleDown(width: $maxWidth, height: $maxHeight);
 
         if ($convertToWebp) {
             $filename = uniqid().'.webp';

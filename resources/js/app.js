@@ -1,1 +1,11 @@
-//
+import './libs/alpine';
+import './libs/fontawesome';
+import './libs/flatpickr';
+import './libs/sortable';
+import './sw-register';
+import './pwa';
+import './offline';
+import './push';
+import './notificaciones';
+import './pedidos-realtime';
+import './echo';

@@ -51,12 +51,25 @@
     </button>
 </form>
 
+@php
+    $socialProviders = collect([
+        ['key' => 'google', 'label' => 'Google', 'icon' => 'fa-brands fa-google'],
+        ['key' => 'facebook', 'label' => 'Facebook', 'icon' => 'fa-brands fa-facebook-f'],
+    ])->filter(fn ($p) => filled(config('services.'.$p['key'].'.client_id')));
+@endphp
+
 <div class="divider">o continúa con</div>
 
-<button type="button" class="btn-sso" onclick="showToast('SSO no configurado aún.', false)">
-    <i class="fa-solid fa-building" style="color:var(--gold);font-size:15px"></i>
-    Inicio de sesión único (SSO)
-</button>
+@if ($socialProviders->isNotEmpty())
+    <div class="social-buttons">
+        @foreach ($socialProviders as $provider)
+            <a class="btn-sso" href="{{ route('social.redirect', ['provider' => $provider['key']]) }}">
+                <i class="{{ $provider['icon'] }}" style="color:var(--gold);font-size:15px"></i>
+                {{ $provider['label'] }}
+            </a>
+        @endforeach
+    </div>
+@endif
 
 <div class="login-footer">
     ¿Necesitas acceso? <a href="#">Contacta a tu administrador</a> &nbsp;·&nbsp; <a href="#">Política de privacidad</a>

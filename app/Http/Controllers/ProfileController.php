@@ -9,6 +9,10 @@ class ProfileController extends Controller
 {
     public function edit()
     {
+        if (auth()->user()->isUser()) {
+            return redirect()->route('home')->with('open_profile', true);
+        }
+
         return view('profile.edit');
     }
 
@@ -45,6 +49,12 @@ class ProfileController extends Controller
         }
 
         $user->save();
+
+        if ($request->input('redirect_to') === 'home') {
+            return redirect()->route('home')
+                ->with('success', 'Perfil actualizado exitosamente.')
+                ->with('open_profile', true);
+        }
 
         return redirect()->route('profile.edit')
             ->with('success', 'Perfil actualizado exitosamente.');

@@ -1,13 +1,15 @@
-version: '3.8'
-
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: laravel_bar_app
+    privileged: true
+    ports:
+      - "8080:8080"
     volumes:
       - ./:/var/www
+      - ./docker/entrypoint.sh:/entrypoint.sh
     depends_on:
       - db
     networks:
@@ -45,6 +47,7 @@ services:
       context: ./print-server
       dockerfile: Dockerfile
     container_name: laravel_bar_print
+    privileged: true
     devices:
     # - "/dev/usb/lp0:/dev/usb/lp0"
     # - "/dev/usb/lp1:/dev/usb/lp1"

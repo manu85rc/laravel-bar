@@ -5,109 +5,28 @@ namespace App\Http\Controllers;
 use App\Models\Mesa;
 use App\Models\Pedido;
 use App\Models\Reserva;
+use App\Models\Zona;
 use Illuminate\Http\Request;
 
 class MesaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $query = Mesa::orderBy('numero');
-        $pisoActual = request('piso');
-        $pisos = Mesa::distinct()->whereNotNull('piso')->pluck('piso')->toArray();
-        if ($pisoActual) {
-            $query->where('piso', $pisoActual);
+        $tab = request('tab', 'plano');
+        $zonas = Zona::withCount('mesas')->orderBy('orden')->orderBy('nombre')->get();
+        $zonaSolicitada = request('zona') ? (int) request('zona') : null;
+
+        if ($zonaSolicitada !== null) {
+            $zonaActual = $zonaSolicitada;
+        } elseif ($tab === 'plano' && $zonas->isNotEmpty()) {
+            $zonaActual = $zonas->first()->id;
+        } else {
+            $zonaActual = null;
         }
-        $mesas = $query->get();
-
-        return view('mesas.index', compact('mesas', 'pisos', 'pisoActual'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('mesas.create');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'numero' => 'required|string|max:10|unique:mesas',
-            'capacidad' => 'required|integer|min:1',
-            'ubicacion' => 'nullable|string|max:50',
-            'piso' => 'nullable|string|max:50',
-            'disponible' => 'boolean',
-            'pos_x' => 'nullable|integer|min:0',
-            'pos_y' => 'nullable|integer|min:0',
-            'forma' => 'nullable|string|in:circle,square',
-            'ancho' => 'nullable|integer|min:40|max:200',
-            'alto' => 'nullable|integer|min:40|max:200',
-        ]);
-
-        Mesa::create($request->only(['numero', 'capacidad', 'ubicacion', 'piso', 'disponible', 'pos_x', 'pos_y', 'forma', 'ancho', 'alto']));
-
-        return redirect()->route('admin.mesas.index')
-            ->with('success', 'Mesa creada exitosamente.');
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Mesa $mesa)
-    {
-        return view('mesas.edit', compact('mesa'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Mesa $mesa)
-    {
-        $request->validate([
-            'numero' => 'required|string|max:10|unique:mesas,numero,'.$mesa->id,
-            'capacidad' => 'required|integer|min:1',
-            'ubicacion' => 'nullable|string|max:50',
-            'piso' => 'nullable|string|max:50',
-            'disponible' => 'boolean',
-            'pos_x' => 'nullable|integer|min:0',
-            'pos_y' => 'nullable|integer|min:0',
-            'forma' => 'nullable|string|in:circle,square',
-            'ancho' => 'nullable|integer|min:40|max:200',
-            'alto' => 'nullable|integer|min:40|max:200',
-        ]);
-
-        $mesa->update($request->only(['numero', 'capacidad', 'ubicacion', 'piso', 'disponible', 'pos_x', 'pos_y', 'forma', 'ancho', 'alto']));
-
-        return redirect()->route('admin.mesas.index')
-            ->with('success', 'Mesa actualizada exitosamente.');
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Mesa $mesa)
-    {
-        $mesa->delete();
-
-        return redirect()->route('admin.mesas.index')
-            ->with('success', 'Mesa eliminada exitosamente.');
-    }
-
-    public function plano()
-    {
-        $pisos = Mesa::distinct()->whereNotNull('piso')->pluck('piso')->toArray();
-        $pisoActual = request('piso', $pisos[0] ?? null);
 
         $query = Mesa::orderBy('numero');
-        if ($pisoActual) {
-            $query->where('piso', $pisoActual);
+        if ($zonaActual) {
+            $query->where('zona_id', $zonaActual);
         }
         $mesas = $query->get();
 
@@ -124,15 +43,107 @@ class MesaController extends Controller
         $mesasData = $mesas->map(fn ($m) => [
             'id' => $m->id,
             'numero' => $m->numero,
-            'capacidad' => $m->capacidad,
+            'zona_id' => $m->zona_id,
+            'disponible' => (bool) $m->disponible,
             'pos_x' => (int) $m->pos_x,
             'pos_y' => (int) $m->pos_y,
             'forma' => $m->forma,
             'ancho' => (int) $m->ancho,
             'alto' => (int) $m->alto,
+            'color' => $m->color,
         ])->values();
 
-        return view('mesas.plano', compact('mesas', 'mesasConPedido', 'mesasConReserva', 'mesasData', 'pisos', 'pisoActual'));
+        return view('mesas.index', compact('mesas', 'zonas', 'zonaActual', 'mesasConPedido', 'mesasConReserva', 'mesasData', 'tab'));
+    }
+
+    public function create()
+    {
+        $zonas = Zona::orderBy('orden')->orderBy('nombre')->get();
+
+        return view('mesas.create', compact('zonas'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'numero' => 'required|string|max:10|unique:mesas',
+            'zona_id' => 'nullable|exists:zonas,id',
+            'disponible' => 'boolean',
+            'pos_x' => 'nullable|integer|min:0',
+            'pos_y' => 'nullable|integer|min:0',
+            'forma' => 'nullable|string|in:circle,square',
+            'ancho' => 'nullable|integer|min:40|max:200',
+            'alto' => 'nullable|integer|min:40|max:200',
+            'color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+        ]);
+
+        $data = $request->only(['numero', 'zona_id', 'disponible', 'pos_x', 'pos_y', 'forma', 'ancho', 'alto', 'color']);
+        $data['color'] = $data['color'] ?: null;
+
+        Mesa::create($data);
+
+        return redirect()->route('admin.mesas.index')
+            ->with('success', 'Mesa creada exitosamente.');
+    }
+
+    public function edit(Mesa $mesa)
+    {
+        $zonas = Zona::orderBy('orden')->orderBy('nombre')->get();
+
+        return view('mesas.edit', compact('mesa', 'zonas'));
+    }
+
+    public function update(Request $request, Mesa $mesa)
+    {
+        $request->validate([
+            'numero' => 'required|string|max:10|unique:mesas,numero,'.$mesa->id,
+            'zona_id' => 'nullable|exists:zonas,id',
+            'disponible' => 'boolean',
+            'pos_x' => 'nullable|integer|min:0',
+            'pos_y' => 'nullable|integer|min:0',
+            'forma' => 'nullable|string|in:circle,square',
+            'ancho' => 'nullable|integer|min:40|max:200',
+            'alto' => 'nullable|integer|min:40|max:200',
+            'color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+        ]);
+
+        $data = $request->only(['numero', 'zona_id', 'disponible', 'pos_x', 'pos_y', 'forma', 'ancho', 'alto', 'color']);
+        $data['color'] = $data['color'] ?: null;
+
+        $mesa->update($data);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'mesa' => $mesa]);
+        }
+
+        return redirect()->route('admin.mesas.index')
+            ->with('success', 'Mesa actualizada exitosamente.');
+    }
+
+    public function destroy(Request $request, Mesa $mesa)
+    {
+        $tieneHistorial = $mesa->pedidos()->exists()
+            || $mesa->reservas()->exists()
+            || $mesa->pagos()->exists();
+
+        if ($tieneHistorial) {
+            $message = 'No se puede eliminar la mesa porque tiene pedidos, reservas o pagos asociados.';
+
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 409);
+            }
+
+            return redirect()->back()->with('error', $message);
+        }
+
+        $mesa->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Mesa eliminada exitosamente.']);
+        }
+
+        return redirect()->route('admin.mesas.index')
+            ->with('success', 'Mesa eliminada exitosamente.');
     }
 
     public function guardarPlano(Request $request)
@@ -145,6 +156,7 @@ class MesaController extends Controller
             'mesas.*.forma' => 'required|string|in:circle,square,rectangle',
             'mesas.*.ancho' => 'required|integer|min:40|max:200',
             'mesas.*.alto' => 'required|integer|min:40|max:200',
+            'mesas.*.color' => 'nullable|string|max:7',
         ]);
 
         foreach ($request->mesas as $data) {
@@ -154,6 +166,7 @@ class MesaController extends Controller
                 'forma' => $data['forma'] === 'rectangle' ? 'square' : $data['forma'],
                 'ancho' => $data['ancho'],
                 'alto' => $data['alto'],
+                'color' => $data['color'] ?? null,
             ]);
         }
 

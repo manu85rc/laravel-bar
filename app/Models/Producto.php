@@ -18,13 +18,16 @@ class Producto extends Model
         'categoria_id',
         'disponible',
         'foto_path',
+        'mostrar_foto',
         'tipo',
+        'orden',
     ];
 
     protected function casts(): array
     {
         return [
             'disponible' => 'boolean',
+            'mostrar_foto' => 'boolean',
         ];
     }
 

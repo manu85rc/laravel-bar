@@ -23,6 +23,11 @@ class BrandingController extends Controller
             'tagline' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
+            'social_facebook' => 'nullable|string|max:255',
+            'social_whatsapp' => 'nullable|string|max:255',
+            'social_tiktok' => 'nullable|string|max:255',
+            'social_twitter' => 'nullable|string|max:255',
+            'social_instagram' => 'nullable|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'favicon' => 'nullable|file|mimes:ico,png,jpg,gif,webp|max:5120',
             'font_family' => 'nullable|string|max:255',
@@ -33,12 +38,12 @@ class BrandingController extends Controller
 
         $branding = Branding::getInstance();
 
-        $data = $request->only('app_name', 'tagline', 'address', 'phone', 'font_family', 'primary_color', 'background_color');
+        $data = $request->only('app_name', 'tagline', 'address', 'phone', 'font_family', 'primary_color', 'background_color', 'social_facebook', 'social_whatsapp', 'social_tiktok', 'social_twitter', 'social_instagram');
 
         if ($request->hasFile('logo')) {
             $image->deleteImage($branding->logo_path);
             $data['logo_path'] = $image->optimizeAndStore(
-                $request->file('logo'), 'logos', 400, 200, quality: 85
+                $request->file('logo'), 'logos', 400, 400, quality: 85
             );
         }
 
@@ -64,6 +69,6 @@ class BrandingController extends Controller
         $branding->update($data);
 
         return redirect()->route('admin.branding.edit')
-            ->with('success', 'Branding actualizado exitosamente.');
+            ->with('success', 'Configuración actualizada exitosamente.');
     }
 }

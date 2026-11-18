@@ -9,7 +9,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE printers MODIFY COLUMN tipo ENUM('cocina','bebidas','ambas','factura') NOT NULL DEFAULT 'ambas'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE printers MODIFY COLUMN tipo ENUM('cocina','bebidas','ambas','factura') NOT NULL DEFAULT 'ambas'");
+        }
 
         Schema::table('printers', function (Blueprint $table) {
             $table->enum('papel', ['58mm', '80mm'])->default('80mm')->after('tipo');
@@ -22,6 +24,8 @@ return new class extends Migration
             $table->dropColumn('papel');
         });
 
-        DB::statement("ALTER TABLE printers MODIFY COLUMN tipo ENUM('cocina','bebidas','ambas') NOT NULL DEFAULT 'ambas'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE printers MODIFY COLUMN tipo ENUM('cocina','bebidas','ambas') NOT NULL DEFAULT 'ambas'");
+        }
     }
 };

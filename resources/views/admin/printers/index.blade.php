@@ -7,6 +7,7 @@
         <div class="page-sub">{{ $printers->count() }} impresoras configuradas</div>
     </div>
     <div class="btn-row">
+        <a href="{{ route('admin.printers.terminal') }}" class="btn btn-ghost"><i class="fa-solid fa-desktop"></i> Terminal</a>
         <a href="{{ route('admin.printers.create') }}" class="btn btn-gold"><i class="fa-solid fa-plus"></i> Nueva Impresora</a>
     </div>
 </div>
@@ -21,9 +22,11 @@
             <thead>
                 <tr>
                     <th>Nombre</th>
+                    <th>Conexión</th>
                     <th>Tipo</th>
                     <th>Papel</th>
                     <th>Dispositivo</th>
+                    <th>Baud Rate</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -38,6 +41,13 @@
                                     <strong>{{ $printer->nombre }}</strong>
                                 </div>
                             </div>
+                        </td>
+                        <td>
+                            @if ($printer->conexion === 'bluetooth')
+                                <span class="badge b-blue"><i class="fa-brands fa-bluetooth" style="margin-right:4px"></i> Bluetooth</span>
+                            @else
+                                <span class="badge b-gray"><i class="fa-solid fa-usb" style="margin-right:4px"></i> USB</span>
+                            @endif
                         </td>
                         <td>
                             @php
@@ -60,6 +70,7 @@
                         </td>
                         <td><code style="font-size:12px;color:var(--text-2)">{{ $printer->papel ?? '80mm' }}</code></td>
                         <td><code style="font-size:12px;color:var(--text-2)">{{ $printer->ruta_dispositivo }}</code></td>
+                        <td><code style="font-size:12px;color:var(--text-2)">{{ $printer->baud_rate ?? '9600' }}</code></td>
                         <td>
                             <span class="badge {{ $printer->activo ? 'b-green' : 'b-red' }}">
                                 <span class="bdot"></span>{{ $printer->activo ? 'Activa' : 'Inactiva' }}
@@ -76,7 +87,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="empty-state">No hay impresoras configuradas. <a href="{{ route('admin.printers.create') }}" style="color:var(--gold)">Crear una</a></td></tr>
+                    <tr><td colspan="8" class="empty-state">No hay impresoras configuradas. <a href="{{ route('admin.printers.create') }}" style="color:var(--gold)">Crear una</a></td></tr>
                 @endforelse
             </tbody>
         </table>

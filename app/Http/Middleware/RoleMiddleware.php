@@ -8,12 +8,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
-     * @param  string  $role
-     */
     public function handle(Request $request, Closure $next, string $roles): Response
     {
         $user = $request->user();
@@ -38,6 +32,9 @@ class RoleMiddleware
             return redirect('/')->with('error', 'No tienes permiso para acceder a esta sección.');
         }
 
-        return redirect('/dashboard')->with('error', 'No tienes permiso para acceder a esta sección.');
+        $home = $user->panelHomeRoute();
+
+        return ($home ? redirect()->route($home) : redirect('/'))
+            ->with('error', 'No tienes permiso para acceder a esta sección.');
     }
 }

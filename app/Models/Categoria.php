@@ -34,6 +34,6 @@ class Categoria extends Model
 
     public function productos()
     {
-        return $this->hasMany(Producto::class);
+        return $this->hasMany(Producto::class)->orderBy('orden')->orderBy('id');
     }
 }

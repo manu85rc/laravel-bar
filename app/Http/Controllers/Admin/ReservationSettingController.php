@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ReservationSetting;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ReservationSettingController extends Controller
 {
@@ -13,8 +14,9 @@ class ReservationSettingController extends Controller
         $settings = ReservationSetting::getInstance();
         $diasSemana = ReservationSetting::getDiasSemana();
         $daySettings = $settings->daySettings->keyBy('dia');
+        $timezones = ReservationSetting::timezones();
 
-        return view('admin.reservation_settings.edit', compact('settings', 'diasSemana', 'daySettings'));
+        return view('admin.reservation_settings.edit', compact('settings', 'diasSemana', 'daySettings', 'timezones'));
     }
 
     public function update(Request $request)
@@ -22,6 +24,7 @@ class ReservationSettingController extends Controller
         $rules = [
             'intervalo_minutos' => 'required|integer|min:15|max:120',
             'max_personas' => 'required|integer|min:1|max:100',
+            'timezone' => ['required', 'string', 'timezone', Rule::in(ReservationSetting::timezones())],
             'dias' => 'required|array',
         ];
 
@@ -39,6 +42,7 @@ class ReservationSettingController extends Controller
         $settings->update([
             'intervalo_minutos' => $request->intervalo_minutos,
             'max_personas' => $request->max_personas,
+            'timezone' => $request->timezone,
         ]);
 
         foreach (range(1, 7) as $dia) {

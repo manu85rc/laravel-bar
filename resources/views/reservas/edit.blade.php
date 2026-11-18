@@ -36,7 +36,7 @@
                             <option value="">Selecciona una mesa</option>
                             @foreach ($mesas as $mesa)
                                 <option value="{{ $mesa->id }}" {{ old('mesa_id', $reserva->mesa_id) == $mesa->id ? 'selected' : '' }}>
-                                    Mesa {{ $mesa->numero }} ({{ $mesa->capacidad }} pers.) {{ $mesa->ubicacion ? '— ' . $mesa->ubicacion : '' }}
+                                    Mesa {{ $mesa->numero }}
                                 </option>
                             @endforeach
                         </select>

@@ -25,6 +25,27 @@
                 @csrf
                 @method('PUT')
 
+                <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border-dim);">
+                    <div style="font-size:13px;font-weight:600;color:var(--text-3);margin-bottom:12px;letter-spacing:0.04em;">Hora local del sistema</div>
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
+                        <div class="form-group" style="margin:0;flex:1;min-width:220px;">
+                            <label class="form-label" for="timezone">Zona horaria</label>
+                            <select name="timezone" id="timezone" class="form-select" required onchange="updateTzPreview()">
+                                @foreach ($timezones as $tz)
+                                    <option value="{{ $tz }}" {{ old('timezone', $settings->timezone ?? \App\Models\ReservationSetting::DEFAULT_TIMEZONE) === $tz ? 'selected' : '' }}>
+                                        {{ $tz }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin:0;flex:1;min-width:220px;">
+                            <span class="form-label">Hora actual del sistema</span>
+                            <div class="form-input" id="tzPreview" style="cursor:default;">—</div>
+                        </div>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-4);margin-top:8px;">Se usa para la fecha del admin y la hora impresa en tickets.</div>
+                </div>
+
                 <div style="margin-bottom:20px;display:flex;gap:16px;flex-wrap:wrap;">
                     <div class="form-group" style="margin:0;flex:1;min-width:180px;">
                         <label class="form-label" for="intervalo_minutos">Intervalo entre turnos</label>
@@ -163,7 +184,29 @@ function updateDayStatus(num) {
     status.innerHTML = parts.length ? parts.join(' \u00b7 ') : 'Sin horarios';
 }
 
+function updateTzPreview() {
+    var sel = document.getElementById('timezone');
+    var el = document.getElementById('tzPreview');
+    if (!sel || !el) return;
+    try {
+        el.textContent = new Intl.DateTimeFormat('es-AR', {
+            timeZone: sel.value,
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hourCycle: 'h23'
+        }).format(new Date());
+    } catch (e) {
+        el.textContent = '\u2014';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    updateTzPreview();
+    setInterval(updateTzPreview, 1000);
     @foreach ($diasSemana as $num => $nombre)
         (function(num) {
             var checkbox = document.querySelector('input[type="checkbox"][name="dias[' + num + '][activo]"]');

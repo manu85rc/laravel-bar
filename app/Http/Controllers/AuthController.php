@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\RedirectsAuthenticatedUsers;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,17 +13,13 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    /**
-     * Show the login form.
-     */
+    use RedirectsAuthenticatedUsers;
+
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
-    /**
-     * Handle login request.
-     */
     public function login(Request $request)
     {
         $request->validate([
@@ -31,66 +29,46 @@ class AuthController extends Controller
 
         $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-
-            $user = Auth::user();
-            if ($user->role === User::ROLE_USER && $request->input('redirect_from') === 'reservar') {
-                return redirect()->route('home')->with('open_reservar', true);
-            }
-
-            if ($user->isUser()) {
-                return redirect()->route('home');
-            }
-
-            return redirect()->intended('/dashboard');
+        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+            return back()->withErrors([
+                'email' => 'The provided credentials do not match our records.',
+            ])->onlyInput('email');
         }
 
-        return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
-        ])->onlyInput('email');
+        $request->session()->regenerate();
+
+        return $this->redirectAfterLogin($request, Auth::user());
     }
 
-    /**
-     * Show the registration form.
-     */
     public function showRegistrationForm()
     {
         return view('auth.register');
     }
 
-    /**
-     * Handle registration request.
-     */
     public function register(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => ['required', 'string', 'min:8', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()],
+            'password' => 'required|string|min:8|confirmed',
         ]);
+
+        $userRole = Role::where('slug', 'user')->first();
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role_id' => $userRole?->id,
         ]);
-
-        $user->role = User::ROLE_USER;
-        $user->save();
 
         Auth::login($user);
 
-        if ($user->role === User::ROLE_USER && $request->input('redirect_from') === 'reservar') {
-            return redirect()->route('home')->with('open_reservar', true);
-        }
+        $request->session()->regenerate();
 
-        return redirect()->route('dashboard');
+        return $this->redirectAfterLogin($request, $user);
     }
 
-    /**
-     * Handle logout request.
-     */
     public function logout(Request $request)
     {
         Auth::logout();
@@ -101,40 +79,25 @@ class AuthController extends Controller
         return redirect('/');
     }
 
-    /**
-     * Show the password reset link request form.
-     */
     public function showLinkRequestForm()
     {
         return view('auth.passwords.email');
     }
 
-    /**
-     * Send a reset link to the given user.
-     */
     public function sendResetLinkEmail(Request $request)
     {
         $request->validate(['email' => 'required|email']);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response and see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
         $status = Password::sendResetLink(
             $request->only('email')
         );
 
-        // If the link was successfully sent, we'll redirect back to the form
-        // with a success message. If there was an error, we'll redirect back
-        // to the form with an error message.
         return $status === Password::RESET_LINK_SENT
                     ? back()->with(['status' => __($status)])
                     : back()->withInput($request->only('email'))
                         ->withErrors(['email' => __($status)]);
     }
 
-    /**
-     * Show the password reset form with a given token.
-     */
     public function showResetForm(Request $request, $token = null)
     {
         return view('auth.passwords.reset')->with(
@@ -142,20 +105,14 @@ class AuthController extends Controller
         );
     }
 
-    /**
-     * Reset the given user's password.
-     */
     public function reset(Request $request)
     {
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
-            'password' => ['required', 'string', 'min:8', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()],
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
-        // Here we will attempt to reset the user's password. If it is successful we
-        // will update the password on an actual user model and persist it to the
-        // database. Otherwise we will bounce the user back.
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
@@ -167,9 +124,6 @@ class AuthController extends Controller
             }
         );
 
-        // If the password was successfully reset, we will redirect the user back to
-        // the application's home authenticated view. If there is an error we will
-        // redirect them back to where they came from.
         return $status === Password::PASSWORD_RESET
                     ? redirect()->route('login')->with('status', __($status))
                     : back()->withInput($request->only('email'))
